@@ -1,6 +1,6 @@
 {
   "name": "literature-clock-mcp",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "mcpName": "io.github.markusvankempen/literature-clock-mcp",
   "description": "A line for the current minute, from literature, copyright-free books, or an original voice.",
   "type": "module",

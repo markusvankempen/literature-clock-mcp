@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img alt="version 1.6.1" src="https://img.shields.io/badge/version-1.6.1-2ea44f"></a>
+  <a href="package.json"><img alt="version 1.6.2" src="https://img.shields.io/badge/version-1.6.2-2ea44f"></a>
   <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
   <a href="package.json"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP stdio and HTTP" src="https://img.shields.io/badge/MCP-stdio%20%7C%20HTTP-111111"></a>
@@ -159,7 +159,7 @@ No account and no analytics. Books and voices stay on the machine. Literature tr
 | **npm** | [literature-clock-mcp](https://www.npmjs.com/package/literature-clock-mcp) (publish from this folder) |
 | **MCP name** | `io.github.markusvankempen/literature-clock-mcp` |
 | **Name** | Literature Clock · package `literature-clock-mcp` |
-| **Version** | 1.6.1 — `package.json`, `server.json`, and `src/version.js` must match |
+| **Version** | 1.6.2 — `package.json`, `server.json`, and `src/version.js` must match |
 | **Transports** | stdio, Streamable HTTP (`/mcp`), legacy SSE (`/sse`). Each can be turned off in Settings. One stays on. |
 | **Source** | [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) · Chrome twin [chrome-ext-ink-clock](https://github.com/markusvankempen/chrome-ext-ink-clock) |
 
