@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Literature Clock">
+  <rect x="1.25" y="1.25" width="61.5" height="61.5" rx="13" fill="#f4ecd8" stroke="#2b2416" stroke-width="2.5"/>
+  <path d="M12.5 46.2Q22 40.6 31.2 44.4L31.2 52.6Q22 49.4 12.5 54.2Z" fill="#fbf6ea" stroke="#2b2416" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M32.8 44.4Q42 40.6 51.5 46.2L51.5 54.2Q42 49.4 32.8 52.6Z" fill="#fbf6ea" stroke="#2b2416" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M32 44.6v8.2" stroke="#2b2416" stroke-width="1.35" stroke-linecap="round"/>
+  <g stroke="#8b3a2a" stroke-width="1.15" stroke-linecap="round">
+    <path d="M17.2 47.6h8.2"/>
+    <path d="M17.6 50.2h7"/>
+  </g>
+  <g stroke="#2b2416" stroke-width="1.15" stroke-linecap="round">
+    <path d="M38.6 47.6h8.2"/>
+    <path d="M39 50.2h7"/>
+  </g>
+  <circle cx="32" cy="25.5" r="14.2" fill="#f4ecd8" stroke="#2b2416" stroke-width="2.15"/>
+  <g stroke="#2b2416" stroke-width="1.7" stroke-linecap="round">
+    <line x1="32" y1="12.9" x2="32" y2="14.9"/>
+    <line x1="44.6" y1="25.5" x2="42.6" y2="25.5"/>
+    <line x1="19.4" y1="25.5" x2="21.4" y2="25.5"/>
+  </g>
+  <line x1="32" y1="25.5" x2="25.77" y2="21.14" stroke="#2b2416" stroke-width="2.25" stroke-linecap="round"/>
+  <line x1="32" y1="25.5" x2="41.01" y2="20.3" stroke="#8b3a2a" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="32" cy="25.5" r="1.9" fill="#8b3a2a"/>
+</svg>

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.markusvankempen/literature-clock-mcp",
+  "title": "Literature Clock",
+  "description": "A line for the current minute, from literature, copyright-free books, or an original voice.",
+  "websiteUrl": "https://markusvankempen.github.io/",
+  "repository": {
+    "url": "https://github.com/markusvankempen/literature-clock-mcp",
+    "source": "github"
+  },
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "512x512"
+      ],
+      "theme": "light"
+    },
+    {
+      "src": "https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg",
+      "mimeType": "image/svg+xml",
+      "sizes": [
+        "any"
+      ],
+      "theme": "light"
+    }
+  ],
+  "version": "1.6.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "literature-clock-mcp",
+      "version": "1.6.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "MCP_API_KEY",
+          "description": "API key for tool calls when AUTH_MODE is write or all. Issue one on /admin.",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "AUTH_MODE",
+          "description": "off (default), write, or all. describe_server stays open in every mode.",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "RATE_LIMIT",
+          "description": "Max tool calls per window per caller. Default 60.",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        }
+      ]
+    }
+  ],
+  "_meta": {
+    "io.modelcontextprotocol.registry/publisher-provided": {
+      "author": {
+        "name": "Markus van Kempen",
+        "url": "https://markusvankempen.github.io/",
+        "github": "https://github.com/markusvankempen/"
+      }
+    }
+  }
+}
