@@ -12,7 +12,7 @@ Same release shape as [mcp-ticket-demo](https://github.com/markusvankempen/mcp-t
 
 ## What ships
 
-`files` in `package.json` limits the tarball to `src/`, `data/` (books and voices), `README.md`, `docs/screenshots/`, `docs/icon.png`, `docs/icon.svg`, `server.json`, `LICENSE`, and `NOTICE`.
+`files` in `package.json` limits the tarball to `src/`, `data/` (books and voices), `README.md`, `docs/screenshots/`, `docs/icon.png`, `docs/icon.svg`, `server.json`, `clients/` (HTML setup pages), `LICENSE`, and `NOTICE`.
 
 `npm run prepack` copies `../chrome/books` and `../chrome/voices` into `data/` before the tarball is built. Do not publish without that Chrome corpus beside this folder.
 

@@ -21,13 +21,9 @@
 </p>
 
 <p align="center">
-  This repository is the project home: listing, screenshots, and how to connect. The server and the quote files ship in the npm package <a href="https://www.npmjs.com/package/literature-clock-mcp">literature-clock-mcp</a>. They are not in this git tree.
-</p>
-
-<p align="center">
-  <a href="https://www.npmjs.com/package/literature-clock-mcp"><img alt="version 1.6.3" src="https://img.shields.io/badge/version-1.6.3-2ea44f"></a>
+  <a href="package.json"><img alt="version 1.6.4" src="https://img.shields.io/badge/version-1.6.4-2ea44f"></a>
   <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
-  <a href="https://www.npmjs.com/package/literature-clock-mcp"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white"></a>
+  <a href="package.json"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP stdio and HTTP" src="https://img.shields.io/badge/MCP-stdio%20%7C%20HTTP-111111"></a>
   <a href="https://creativecommons.org/licenses/by-nc-sa/2.5/"><img alt="Literature collection CC BY-NC-SA 2.5" src="https://img.shields.io/badge/literature-CC%20BY--NC--SA%202.5-lightgrey"></a>
 </p>
@@ -102,13 +98,13 @@
 }
 ```
 
-Install with `npx literature-clock-mcp`. That process is stdio. `MCP_MODE=http npx literature-clock-mcp` serves the clock.
+From this folder, before that version is on npm, point `command` at `node`, `args` at `["src/index.js"]`, and `cwd` at this directory. stdio is the default. `npm run http` serves the clock at [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
 
 ## Add a hosted server
 
 The same configs work for [Render](https://literature-clock-mcp.onrender.com/), IBM Code Engine, or any host that serves this app over HTTPS. The MCP URL is the site plus `/mcp`. The live Render server is `https://literature-clock-mcp.onrender.com/mcp`. A Code Engine app looks like `https://<app>.<region>.codeengine.appdomain.cloud/mcp`.
 
-The host must run `MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.3` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
+The host must run `MCP_MODE=http HOST=0.0.0.0 node src/index.js` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
 
 When auth mode is `write` or `all`, add a header `Authorization: Bearer <key>`. Auth is `off` on a fresh server, so the blocks below need no key.
 
@@ -167,7 +163,7 @@ No account and no analytics. Books and voices stay on the machine. Literature tr
 | **npm** | [literature-clock-mcp](https://www.npmjs.com/package/literature-clock-mcp) (publish from this folder) |
 | **MCP name** | `io.github.markusvankempen/literature-clock-mcp` |
 | **Name** | Literature Clock · package `literature-clock-mcp` |
-| **Version** | 1.6.3 on npm. `package.json`, `server.json`, and `src/version.js` in that package match |
+| **Version** | 1.6.4 — `package.json`, `server.json`, and `src/version.js` must match |
 | **Transports** | stdio, Streamable HTTP (`/mcp`), legacy SSE (`/sse`). Each can be turned off in Settings. One stays on. |
 | **Source** | [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) · Chrome twin [chrome-ext-ink-clock](https://github.com/markusvankempen/chrome-ext-ink-clock) |
 
@@ -197,7 +193,7 @@ Sign-in before Settings on a fresh session.
 |---|---|
 | Clock page | `/` — Show, Another line, Random, Read aloud. `?source=literature&time=09:05` |
 | Literature, books, mix, surprise, voices | Default source is literature. `list_sources` |
-| Nine tools | `describe_server`, `list_sources`, `get_quote`, `count_lines`, `get_settings`, `update_settings`, `list_schemas`, `get_schema`, `push_quote` |
+| Clock, settings, keys, users, log | Each Settings form is a tool: `set_clock`, `set_auth_mode`, `set_audit`, `set_rate_limit`, `set_protocols`, `set_ui_auth`, `set_tool_gate`, `set_tool_lock`, `set_push`. Backup is `export_settings` then `import_settings`. The log is `set_audit`, then `generate_traffic`, then `export_log`. Those need the admin scope even when auth mode is off. |
 | JSON Schema | `list_schemas` then `get_schema`, or `tools/list` on the Tools page |
 | Run a tool | Tools page. Copy JSON, or open the result in a new tab |
 | Resources | `sources://list`, `quote://{source}/{hhmm}` |
@@ -237,6 +233,28 @@ Sign-in before Settings on a fresh session.
 | `list_schemas` | read | Names for the line, source, settings, and tool schemas. |
 | `get_schema` | read | JSON Schema for one of those names. A tool name includes `inputSchema` and `outputSchema`. |
 | `push_quote` | write | Send the current quote to open `GET /events` clients now. Off until `clientPush` is on. HTTP only. |
+| `list_users` | admin | Settings → Users. Names and scopes. Passwords are not returned. |
+| `create_user` | admin | Settings → Users → Save user. |
+| `delete_user` | admin | Settings → Users → Remove. The built-in admin stays. |
+| `list_api_keys` | admin | Settings → API keys. The secret is not returned. |
+| `issue_api_key` | admin | Settings → API keys → Issue key. The secret is returned once. |
+| `revoke_api_key` | admin | Settings → API keys → Revoke. Pass the id from `list_api_keys`. |
+| `export_settings` | admin | Settings → Backup → Export. Includes saved-user password hashes. Omits API keys and the MQTT password. |
+| `import_settings` | admin | Settings → Backup → Import. Pass the export object. |
+| `export_log` | admin | Log → Export log and trace. |
+| `push_quote_now` | admin | Settings → Push → Push a quote now. Uses the saved destinations. |
+| `generate_traffic` | read | Test → Generate traffic. Needs any credential, even when auth mode is off. Then call `export_log`. |
+| `set_clock` | admin | Settings → Clock. Then `get_quote` with no source. |
+| `set_auth_mode` | admin | Settings → Security → Apply mode. Then `describe_server`. |
+| `set_audit` | admin | Settings → Security → Call trace. Then `generate_traffic` and `export_log`. |
+| `set_rate_limit` | admin | Settings → Security → Rate limit. Then `describe_server`. |
+| `set_protocols` | admin | Settings → Protocols. Send all three; at least one stays on. Then `describe_server`. |
+| `set_ui_auth` | admin | Hide HTML pages until sign-in. Then `get_settings`. |
+| `set_tool_gate` | admin | Enable or disable one tool. `describe_server` stays available. Then `describe_server`. |
+| `set_tool_lock` | admin | Lock a tool so it needs a credential even when auth mode is off. Then `describe_server`. |
+| `set_push` | admin | Settings → Push → Save schedule. Then `push_quote_now`, or `push_quote` when client push is on. |
+
+`get_schema` for a tool includes `inputSchema`, `outputSchema`, and the next call. Follow that `next` field once. `describe_server` returns `server.version` and `server.description`. The same version is in the page header, on Health, in `get_settings`, and in the `server` schema.
 
 `get_quote` is read-only. Pass `avoid` with the previous line text to get a different line for the same minute. `count` is 1–8. Failures set `isError: true`. An empty `lines` array means that minute has no row — try `literature`, `books`, or `mix`. Do not invent a quotation.
 
@@ -286,6 +304,15 @@ npx literature-clock-mcp                 # stdio
 MCP_MODE=http npx literature-clock-mcp   # http://127.0.0.1:8080/health
 ```
 
+From this directory before the package is on npm:
+
+```bash
+npm install
+npm test
+npm run test:tools
+npm run http    # http://127.0.0.1:8788/
+```
+
 | URL | What it shows |
 |---|---|
 | `/` | Clock. `?source=literature&time=09:05`. **Another line** skips the line on screen. **Random** picks a different source. **Read** speaks the line. |
@@ -301,16 +328,30 @@ MCP_MODE=http npx literature-clock-mcp   # http://127.0.0.1:8080/health
 
 The same settings are `get_settings` / `update_settings`, and `GET` or `POST /api/settings`.
 
-The browser UI is HTTP only. stdio does not open a page.
+## This checkout
+
+```json
+{
+  "mcpServers": {
+    "literature-clock-mcp": {
+      "command": "node",
+      "args": ["src/index.js"],
+      "cwd": "/absolute/path/to/mcp"
+    }
+  }
+}
+```
+
+The browser UI is HTTP only. stdio does not open a page. Run `npm run http`, then open [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
 
 ## Render
 
-[render.yaml](render.yaml) starts the published npm package. A push to `main` updates the Render service connected to this repository. This git tree does not contain `src/` or the quote files. Leave `PORT` unset so Render can set it. Bind `0.0.0.0`.
+[render.yaml](https://github.com/markusvankempen/literature-clock-mcp/blob/main/render.yaml) in the [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) repo starts this server from the repository. A push to `main` updates [literature-clock-mcp.onrender.com](https://literature-clock-mcp.onrender.com/). Leave `PORT` unset so Render can set it. Bind `0.0.0.0`.
 
 **Start command**
 
 ```bash
-MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.3
+MCP_MODE=http HOST=0.0.0.0 node src/index.js
 ```
 
 | Key | Value |
@@ -341,9 +382,9 @@ Auth defaults to `off`. Settings and Log show a lock because they need a sign-in
 
 | Mode | Behaviour |
 |---|---|
-| `off` | No credential. A tool can still be locked on its own under Settings → Tool gates. |
-| `write` | `update_settings` and `push_quote` need a key. Read tools stay open. |
-| `all` | Every tool except `describe_server` needs `Authorization: Bearer <key>` or `MCP_API_KEY`. |
+| `off` | No credential for quote tools. Admin tools and `generate_traffic` still need a credential. A tool can still be locked on its own under Settings → Tool gates. |
+| `write` | `update_settings` and `push_quote` need a key. Read tools stay open. Admin tools need the admin scope. |
+| `all` | Every tool except `describe_server` needs `Authorization: Bearer <key>` or `MCP_API_KEY`. Admin tools need the admin scope. |
 
 | Variable | What it does |
 |---|---|
@@ -360,6 +401,20 @@ Settings → Tool gates can disable a tool or lock it so it needs a credential e
 Settings → Users adds a name and password with scopes `read`, `write`, or `admin`. The built-in admin name comes from `ADMIN_USER` and is not replaced here. Settings → API keys issues a bearer key. The secret is shown once.
 
 Settings → Protocols turns stdio, Streamable HTTP, and SSE on or off. At least one stays on. The same tab can hide the HTML pages until sign-in. `describe_server` and `update_settings` still answer on a protocol that is on, so a turned-off transport can be turned back on.
+
+## Publish
+
+See [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
+```bash
+npm test
+npm run test:tools
+npm publish
+```
+
+`files` in `package.json` ships `src/`, `data/` (books and voices), this README, `docs/screenshots/`, `docs/icon.png`, `docs/icon.svg`, `server.json`, `LICENSE`, and `NOTICE`. `npm run prepack` copies the Chrome corpus into `data/` before the tarball is built.
+
+npm keywords: `mcp`, `model-context-protocol`, `mcp-server`, `literature-clock`, `ink-clock`, `quotes`, `books`, `voices`, `stdio`, `streamable-http`, `cursor`, `vscode`, `claude`, `clock`.
 
 ## Related clocks
 
