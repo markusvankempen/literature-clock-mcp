@@ -21,9 +21,13 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img alt="version 1.6.2" src="https://img.shields.io/badge/version-1.6.2-2ea44f"></a>
+  This repository is the project home: listing, screenshots, and how to connect. The server and the quote files ship in the npm package <a href="https://www.npmjs.com/package/literature-clock-mcp">literature-clock-mcp</a>. They are not in this git tree.
+</p>
+
+<p align="center">
+  <a href="https://www.npmjs.com/package/literature-clock-mcp"><img alt="version 1.6.2" src="https://img.shields.io/badge/version-1.6.2-2ea44f"></a>
   <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
-  <a href="package.json"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white"></a>
+  <a href="https://www.npmjs.com/package/literature-clock-mcp"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP stdio and HTTP" src="https://img.shields.io/badge/MCP-stdio%20%7C%20HTTP-111111"></a>
   <a href="https://creativecommons.org/licenses/by-nc-sa/2.5/"><img alt="Literature collection CC BY-NC-SA 2.5" src="https://img.shields.io/badge/literature-CC%20BY--NC--SA%202.5-lightgrey"></a>
 </p>
@@ -94,7 +98,7 @@
 }
 ```
 
-From this folder, before that version is on npm, point `command` at `node`, `args` at `["src/index.js"]`, and `cwd` at this directory. stdio is the default. `npm run http` serves the clock at [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
+Install with `npx literature-clock-mcp`. That process is stdio. `MCP_MODE=http npx literature-clock-mcp` serves the clock.
 
 ## Add a hosted server
 
@@ -257,15 +261,6 @@ npx literature-clock-mcp                 # stdio
 MCP_MODE=http npx literature-clock-mcp   # http://127.0.0.1:8080/health
 ```
 
-From this directory before the package is on npm:
-
-```bash
-npm install
-npm test
-npm run test:tools
-npm run http    # http://127.0.0.1:8788/
-```
-
 | URL | What it shows |
 |---|---|
 | `/` | Clock. `?source=literature&time=09:05`. **Another line** skips the line on screen. **Random** picks a different source. **Read** speaks the line. |
@@ -280,32 +275,16 @@ npm run http    # http://127.0.0.1:8788/
 
 The same settings are `get_settings` / `update_settings`, and `GET` or `POST /api/settings`.
 
-## This checkout
-
-```json
-{
-  "mcpServers": {
-    "literature-clock-mcp": {
-      "command": "node",
-      "args": ["src/index.js"],
-      "cwd": "/absolute/path/to/mcp"
-    }
-  }
-}
-```
-
-The browser UI is HTTP only. stdio does not open a page. Run `npm run http`, then open [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
+The browser UI is HTTP only. stdio does not open a page.
 
 ## Render
 
-Use the [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) repo. Leave the Root Directory empty so the start command runs in the folder that contains `package.json`.
-
-`npm start` stays on stdio and never opens a port, so Render’s health check fails. `npm run http` listens on `127.0.0.1:8788`. Render assigns `PORT` and only reaches a process bound to `0.0.0.0`. Leave `PORT` unset.
+Deploy the npm package, not this git repository. Leave `PORT` unset so the platform can set it. Bind `0.0.0.0`.
 
 **Start command**
 
 ```bash
-MCP_MODE=http HOST=0.0.0.0 node src/index.js
+MCP_MODE=http HOST=0.0.0.0 npx literature-clock-mcp@1.6.2
 ```
 
 | Key | Value |
@@ -351,20 +330,6 @@ Issue and revoke keys on `/admin`. `/health` only means the process is up; `/tes
 Settings → Backup downloads the clock, auth, protocols, schedule, tool gates, and saved users (password hashes). Import restores that file. API keys and the MQTT password are not in it. Log → Export log and trace downloads counters, errors, the call trace, and the audit trail.
 
 Settings → Protocols turns stdio, Streamable HTTP, and SSE on or off. At least one stays on. The same tab can hide the HTML pages until sign-in. `describe_server` and `update_settings` still answer on a protocol that is on, so a turned-off transport can be turned back on.
-
-## Publish
-
-See [docs/PUBLISHING.md](docs/PUBLISHING.md).
-
-```bash
-npm test
-npm run test:tools
-npm publish
-```
-
-`files` in `package.json` ships `src/`, `data/` (books and voices), this README, `docs/screenshots/`, `docs/icon.png`, `docs/icon.svg`, `server.json`, `LICENSE`, and `NOTICE`. `npm run prepack` copies the Chrome corpus into `data/` before the tarball is built.
-
-npm keywords: `mcp`, `model-context-protocol`, `mcp-server`, `literature-clock`, `ink-clock`, `quotes`, `books`, `voices`, `stdio`, `streamable-http`, `cursor`, `vscode`, `claude`, `clock`.
 
 ## Related clocks
 
