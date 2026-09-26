@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/literature-clock-mcp"><img alt="version 1.6.2" src="https://img.shields.io/badge/version-1.6.2-2ea44f"></a>
+  <a href="https://www.npmjs.com/package/literature-clock-mcp"><img alt="version 1.6.3" src="https://img.shields.io/badge/version-1.6.3-2ea44f"></a>
   <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
   <a href="https://www.npmjs.com/package/literature-clock-mcp"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP stdio and HTTP" src="https://img.shields.io/badge/MCP-stdio%20%7C%20HTTP-111111"></a>
@@ -108,7 +108,7 @@ Install with `npx literature-clock-mcp`. That process is stdio. `MCP_MODE=http n
 
 The same configs work for [Render](https://literature-clock-mcp.onrender.com/), IBM Code Engine, or any host that serves this app over HTTPS. The MCP URL is the site plus `/mcp`. The live Render server is `https://literature-clock-mcp.onrender.com/mcp`. A Code Engine app looks like `https://<app>.<region>.codeengine.appdomain.cloud/mcp`.
 
-The host must run `MCP_MODE=http HOST=0.0.0.0 npx literature-clock-mcp@1.6.2` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
+The host must run `MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.3` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
 
 When auth mode is `write` or `all`, add a header `Authorization: Bearer <key>`. Auth is `off` on a fresh server, so the blocks below need no key.
 
@@ -167,7 +167,7 @@ No account and no analytics. Books and voices stay on the machine. Literature tr
 | **npm** | [literature-clock-mcp](https://www.npmjs.com/package/literature-clock-mcp) (publish from this folder) |
 | **MCP name** | `io.github.markusvankempen/literature-clock-mcp` |
 | **Name** | Literature Clock · package `literature-clock-mcp` |
-| **Version** | 1.6.2 — `package.json`, `server.json`, and `src/version.js` must match |
+| **Version** | 1.6.3 on npm. `package.json`, `server.json`, and `src/version.js` in that package match |
 | **Transports** | stdio, Streamable HTTP (`/mcp`), legacy SSE (`/sse`). Each can be turned off in Settings. One stays on. |
 | **Source** | [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) · Chrome twin [chrome-ext-ink-clock](https://github.com/markusvankempen/chrome-ext-ink-clock) |
 
@@ -195,19 +195,22 @@ Sign-in before Settings on a fresh session.
 
 | Feature | Where |
 |---|---|
-| Clock page | `/` — Show, Another line, Random, Read aloud |
+| Clock page | `/` — Show, Another line, Random, Read aloud. `?source=literature&time=09:05` |
 | Literature, books, mix, surprise, voices | Default source is literature. `list_sources` |
-| Eight tools | `describe_server`, `list_sources`, `get_quote`, `count_lines`, `get_settings`, `update_settings`, `list_schemas`, `get_schema` |
+| Nine tools | `describe_server`, `list_sources`, `get_quote`, `count_lines`, `get_settings`, `update_settings`, `list_schemas`, `get_schema`, `push_quote` |
 | JSON Schema | `list_schemas` then `get_schema`, or `tools/list` on the Tools page |
 | Run a tool | Tools page. Copy JSON, or open the result in a new tab |
 | Resources | `sources://list`, `quote://{source}/{hhmm}` |
 | Prompts | `diagnose-server`, `quote-for-now`, `another-line`, `mix-the-minute`, `voice-at-nine`, `books-for-a-minute`, `read-settings` |
-| Protocols | stdio, Streamable HTTP, legacy SSE. Settings → Protocols |
+| Protocols | stdio, Streamable HTTP (`/mcp`), legacy SSE (`/sse`). Settings → Protocols. One stays on |
 | Hide pages until sign-in | Settings → Protocols. JSON and MCP stay available |
 | Health, smoke, traffic | `/health`, `/test`. Traffic needs a sign-in or an API key. It fills the log with reads, a bad time, an unknown schema, and a rejected key |
-| Settings | Clock defaults, auth mode, rate limit, call trace, tool gates, API keys |
-| Log | Counters, errors, call trace, audit trail. Export downloads the same, including who called (user, API key, or anonymous). |
-| Auth | `off`, `write`, or `all`. Keys on Settings. `describe_server` stays open |
+| Settings | Clock, security, protocols, push, tool gates, API keys, users, backup |
+| Quote push | Every 5, 10, 15, 30, or 60 minutes, or one line immediately with `push_quote` |
+| Event stream | `GET /events`. The [Events client](clients/events.html) subscribes and can push one line |
+| Log | Counters, errors, call trace, audit trail. Export names the caller (user, API key, or anonymous) |
+| Auth | `off`, `write`, or `all`. Keys and users on Settings. `describe_server` stays open |
+| Client pages | [clients/](clients/index.html) for Cursor, VS Code, Claude Desktop, a browser, the event stream, and settings |
 
 ## Quote sources
 
@@ -229,10 +232,11 @@ Sign-in before Settings on a fresh session.
 | `list_sources` | read | `literature`, `books`, `mix`, `surprise`, and each voice id. |
 | `get_quote` | read | One or more lines for `HH:MM` or `now`. Omit `source` to use the saved default. |
 | `count_lines` | read | How many local lines each source has for one minute |
-| `get_settings` | read | Clock defaults, auth mode, rate limit, and which tools are enabled. |
-| `update_settings` | write | Clock defaults, auth, rate limit, protocols, the page lock, and one tool gate. Same values as Settings. |
+| `get_settings` | read | Clock defaults, auth, rate limit, protocols, tool gates, and the quote schedule, including `clientPush`. |
+| `update_settings` | write | The same values as Settings, including `clientPush`, one tool gate, and one tool lock. |
 | `list_schemas` | read | Names for the line, source, settings, and tool schemas. |
 | `get_schema` | read | JSON Schema for one of those names. A tool name includes `inputSchema` and `outputSchema`. |
+| `push_quote` | write | Send the current quote to open `GET /events` clients now. Off until `clientPush` is on. HTTP only. |
 
 `get_quote` is read-only. Pass `avoid` with the previous line text to get a different line for the same minute. `count` is 1–8. Failures set `isError: true`. An empty `lines` array means that minute has no row — try `literature`, `books`, or `mix`. Do not invent a quotation.
 
@@ -241,6 +245,23 @@ Example:
 ```json
 { "time": "09:05", "source": "literature" }
 ```
+
+## Quote push
+
+The schedule is off until an interval and a destination are saved. The HTTP process sends the current quote from the saved source and time zone. A matching minute is `:00`, `:05`, `:10`, and so on. stdio does not run the schedule. A chat client does not print a push. Call `get_quote` for a line in the reply.
+
+| Destination | What receives the line |
+|---|---|
+| Event stream | `GET /events`. SSE event name `quote`. The first frame on connect is `event: ready`. |
+| Legacy SSE | Open `GET /sse` sessions. Notification `notifications/literature-clock/quote`. |
+| Streamable HTTP | Open `POST /mcp` sessions. The same notification. |
+| MQTT | The saved broker and topic. The password is stored and is not returned by `get_settings`. |
+
+`clientPush` lets a client call `push_quote` without waiting for the minute. That call always includes the event stream, plus any other saved destination. Turn it on under Settings → Push, or with `update_settings` and `"clientPush": true`. The [Events page](clients/events.html) has **Push a quote now**, which calls `push_quote`. Subscribe first, then press it.
+
+Settings → Push → **Push a quote now** uses the saved destinations only. Save the schedule before that button. It does not turn `clientPush` on.
+
+The clock on a host is that machine’s time zone setting. `timeZone` `device` is the process zone. On Render that is UTC.
 
 ## Resources and prompts
 
@@ -275,6 +296,7 @@ MCP_MODE=http npx literature-clock-mcp   # http://127.0.0.1:8080/health
 | `/help` | Feature list, author, pages, and tools. |
 | `/sse` | Legacy SSE |
 | `/mcp` | Streamable HTTP |
+| `/events` | Plain SSE. Event `ready` on connect, then `quote` when a push runs |
 | `/log` | Call trace, after sign-in, when audit is on |
 
 The same settings are `get_settings` / `update_settings`, and `GET` or `POST /api/settings`.
@@ -283,23 +305,23 @@ The browser UI is HTTP only. stdio does not open a page.
 
 ## Render
 
-Deploy the npm package, not this git repository. Leave `PORT` unset so the platform can set it. Bind `0.0.0.0`.
+[render.yaml](render.yaml) starts the published npm package. A push to `main` updates the Render service connected to this repository. This git tree does not contain `src/` or the quote files. Leave `PORT` unset so Render can set it. Bind `0.0.0.0`.
 
 **Start command**
 
 ```bash
-MCP_MODE=http HOST=0.0.0.0 npx literature-clock-mcp@1.6.2
+MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.3
 ```
 
 | Key | Value |
 |---|---|
 | `MCP_MODE` | `http` |
 | `HOST` | `0.0.0.0` |
-| `ADMIN_PASSWORD` | a password you choose |
+| `ADMIN_PASSWORD` | a password you choose. Required on this public address |
 
 Health check path: `/health`.
 
-The clock is `https://<your-service>.onrender.com/`. Settings sign-in uses `ADMIN_USER` (default `demo`) and `ADMIN_PASSWORD`. The laptop password `demo` is off on that public address. IDE setup for that URL, and for Code Engine, is under [Add a hosted server](#add-a-hosted-server).
+The clock is `https://<your-service>.onrender.com/`. The MCP URL is that host plus `/mcp`. Settings sign-in uses `ADMIN_USER` (default `demo`) and `ADMIN_PASSWORD`. The laptop password `demo` is off on that public address. IDE setup for that URL, and for Code Engine, is under [Add a hosted server](#add-a-hosted-server).
 
 ### Example
 
@@ -320,7 +342,7 @@ Auth defaults to `off`. Settings and Log show a lock because they need a sign-in
 | Mode | Behaviour |
 |---|---|
 | `off` | No credential. A tool can still be locked on its own under Settings → Tool gates. |
-| `write` | `update_settings` needs a key. Read tools stay open. |
+| `write` | `update_settings` and `push_quote` need a key. Read tools stay open. |
 | `all` | Every tool except `describe_server` needs `Authorization: Bearer <key>` or `MCP_API_KEY`. |
 
 | Variable | What it does |
@@ -331,7 +353,11 @@ Auth defaults to `off`. Settings and Log show a lock because they need a sign-in
 
 Issue and revoke keys on `/admin`. `/health` only means the process is up; `/test` runs the quote checks.
 
-Settings → Backup downloads the clock, auth, protocols, schedule, tool gates, and saved users (password hashes). Import restores that file. API keys and the MQTT password are not in it. Log → Export log and trace downloads counters, errors, the call trace, and the audit trail.
+Settings → Backup downloads the clock, auth, protocols, schedule (including client push), tool gates, and saved users (password hashes). Import restores that file. API keys and the MQTT password are not in it. Log → Export log and trace downloads counters, errors, the call trace, and the audit trail.
+
+Settings → Tool gates can disable a tool or lock it so it needs a credential even when auth is `off`. `describe_server` stays available and stays open.
+
+Settings → Users adds a name and password with scopes `read`, `write`, or `admin`. The built-in admin name comes from `ADMIN_USER` and is not replaced here. Settings → API keys issues a bearer key. The secret is shown once.
 
 Settings → Protocols turns stdio, Streamable HTTP, and SSE on or off. At least one stays on. The same tab can hide the HTML pages until sign-in. `describe_server` and `update_settings` still answer on a protocol that is on, so a turned-off transport can be turned back on.
 

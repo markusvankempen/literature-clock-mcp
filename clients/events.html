@@ -25,7 +25,7 @@
     <a href="settings.html">Settings</a>
   </nav>
   <main>
-    <p>This is the custom-client stream. The first frame is <code>event: ready</code>. Later frames are <code>event: quote</code>, the same JSON the schedule sends. Push is off until an interval is set and <strong>Event stream</strong> is on. Use <a href="settings.html">Settings</a> to turn that on, or the clock’s own Settings → Push. <strong>Send now</strong> there delivers a line without waiting for the minute.</p>
+    <p>This is the custom-client stream. The first frame is <code>event: ready</code>. Later frames are <code>event: quote</code>. <strong>Push a quote now</strong> calls <code>push_quote</code> on the same server. That tool stays off until <a href="settings.html">Settings</a> turns on <strong>Allow this client to push a quote now</strong>, or the clock’s Settings → Push does. Subscribe, then press the button. The line arrives on this stream without waiting for the minute.</p>
     <p class="muted">Serve this folder from localhost. A loopback page may open the stream. A page on another site is refused until <code>CORS_ORIGINS</code> includes that origin. The browser’s <code>EventSource</code> cannot set a bearer key, so this page uses <code>fetch</code> and reads the stream.</p>
 
     <form id="sub">
@@ -36,6 +36,7 @@
       <p>
         <button type="submit">Subscribe</button>
         <button type="button" class="quiet" id="stop">Stop</button>
+        <button type="button" id="push">Push a quote now</button>
       </p>
     </form>
 
@@ -176,6 +177,68 @@ stream.addEventListener("quote", (event) => {
     document.getElementById("stop").addEventListener("click", () => {
       if (controller) controller.abort();
     });
+
+    function mcpUrl(events) {
+      const trimmed = String(events || "").replace(/\/$/, "");
+      if (trimmed.endsWith("/events")) return trimmed.slice(0, -"/events".length) + "/mcp";
+      return trimmed + "/mcp";
+    }
+
+    document.getElementById("push").addEventListener("click", async () => {
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream"
+      };
+      const key = document.getElementById("key").value.trim();
+      if (key) headers.Authorization = "Bearer " + key;
+      const body = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "push_quote", arguments: {} }
+      };
+      status.textContent = "Pushing…";
+      try {
+        const response = await fetch(mcpUrl(document.getElementById("url").value.trim()), {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body)
+        });
+        const message = await readBody(response);
+        const payload = payloadOf(message);
+        const failure = message?.error?.message
+          || (message?.result?.isError && (message.result.content || []).find((part) => part.type === "text")?.text)
+          || (!response.ok ? "HTTP " + response.status : "");
+        if (failure && !payload?.lines) {
+          status.textContent = failure;
+          return;
+        }
+        if (payload?.lines) showQuote(payload);
+        status.textContent = payload?.time ? "Pushed " + payload.time + "." : "Pushed.";
+      } catch (error) {
+        status.textContent = error.message + " Serve this page from localhost, or set CORS_ORIGINS on the server.";
+      }
+    });
+
+    function payloadOf(message) {
+      const structured = message?.result?.structuredContent;
+      if (structured && Array.isArray(structured.lines)) return structured;
+      const text = (message?.result?.content || []).find((part) => part.type === "text")?.text;
+      if (!text) return null;
+      try { return JSON.parse(text); } catch { return null; }
+    }
+
+    async function readBody(response) {
+      const text = await response.text();
+      const type = response.headers.get("content-type") || "";
+      if (type.includes("text/event-stream") || text.trimStart().startsWith("data:")) {
+        const messages = text.split("\n")
+          .filter((row) => row.startsWith("data:"))
+          .map((row) => JSON.parse(row.slice(5).trim()));
+        return messages.at(-1) || { raw: text };
+      }
+      try { return JSON.parse(text); } catch { return { raw: text }; }
+    }
 
     document.getElementById("copy").addEventListener("click", async () => {
       const button = document.getElementById("copy");

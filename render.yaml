@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: literature-clock-mcp
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.3
+    healthCheckPath: /health
+    envVars:
+      - key: MCP_MODE
+        value: http
+      - key: HOST
+        value: 0.0.0.0
+      - key: ADMIN_PASSWORD
+        sync: false

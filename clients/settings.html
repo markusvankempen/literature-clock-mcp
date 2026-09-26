@@ -76,6 +76,7 @@
       <label class="choice"><input id="pushEvents" type="checkbox"> Event stream (<code>GET /events</code>)</label>
       <label class="choice"><input id="pushSse" type="checkbox"> Legacy SSE sessions (<code>GET /sse</code>)</label>
       <label class="choice"><input id="pushHttp" type="checkbox"> Streamable HTTP sessions</label>
+      <label class="choice"><input id="clientPush" type="checkbox"> Allow this client to push a quote now</label>
       <p>
         <button type="button" id="read">Read settings</button>
         <button type="submit">Save</button>
@@ -192,6 +193,7 @@
       document.getElementById("pushEvents").checked = Boolean(dest.events);
       document.getElementById("pushSse").checked = Boolean(dest.sse);
       document.getElementById("pushHttp").checked = Boolean(dest.streamableHttp);
+      document.getElementById("clientPush").checked = Boolean(push.clientPush);
       const last = push.last || {};
       const where = eventsUrl(mcpUrl());
       status.textContent = "Auth is " + (payload.authMode || "unknown") + ". "
@@ -221,7 +223,8 @@
         pushEveryMinutes: Number(document.getElementById("every").value),
         pushEvents: document.getElementById("pushEvents").checked,
         pushSse: document.getElementById("pushSse").checked,
-        pushHttp: document.getElementById("pushHttp").checked
+        pushHttp: document.getElementById("pushHttp").checked,
+        clientPush: document.getElementById("clientPush").checked
       };
     }
 
