@@ -58,7 +58,7 @@
 
 ## Client pages
 
-[clients/](clients/index.html) is a set of HTML pages for Cursor, VS Code, Claude Desktop, and a browser that calls `get_quote`. Open `clients/index.html`, or serve the folder on localhost so the browser page can reach the server.
+[clients/](clients/index.html) is a set of HTML pages for Cursor, VS Code, Claude Desktop, a browser that calls `get_quote`, a page that subscribes to the quote push on `GET /events`, and a page that reads and changes settings. Open `clients/index.html`, or serve the folder on localhost so those pages can reach the server.
 
 ## Add the server
 

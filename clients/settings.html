@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings · Literature Clock</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg">
+  <link rel="stylesheet" href="client.css">
+</head>
+<body>
+  <header>
+    <img src="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg" alt="">
+    <div>
+      <h1>Settings</h1>
+      <p>Calls <code>get_settings</code> and <code>update_settings</code>.</p>
+    </div>
+  </header>
+  <nav>
+    <a href="index.html">Clients</a>
+    <a href="cursor.html">Cursor</a>
+    <a href="vscode.html">VS Code</a>
+    <a href="claude.html">Claude</a>
+    <a href="browser.html">Browser</a>
+    <a href="events.html">Events</a>
+    <a href="settings.html" aria-current="page">Settings</a>
+  </nav>
+  <main>
+    <p>Save writes to the server in the MCP URL. The box starts at this laptop. <code>MCP_MODE=http npx literature-clock-mcp</code> uses port 8080. <code>npm run http</code> in a checkout uses port 8788. Point the box at a hosted server only when you mean to change that server.</p>
+    <p class="muted">Auth off accepts this call with no key. Auth <code>write</code> or <code>all</code> needs a bearer key with the write scope. This page does not change auth mode, keys, or MQTT.</p>
+
+    <form id="settings">
+      <label for="url">MCP URL</label>
+      <input id="url" name="url" value="http://127.0.0.1:8080/mcp" autocomplete="off" spellcheck="false">
+      <label for="key">Bearer key <span class="muted">leave empty while auth is off</span></label>
+      <input id="key" name="key" type="password" autocomplete="off">
+
+      <div class="row">
+        <div>
+          <label for="source">Default source</label>
+          <select id="source" name="source">
+            <option value="literature">literature</option>
+            <option value="books">books</option>
+            <option value="mix">mix</option>
+            <option value="surprise">surprise</option>
+          </select>
+        </div>
+        <div>
+          <label for="count">Lines</label>
+          <input id="count" name="count" type="number" min="1" max="8" value="1">
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="zone">Time zone</label>
+          <input id="zone" name="zone" value="device" autocomplete="off" spellcheck="false">
+        </div>
+        <div>
+          <label for="hour">Hour clock</label>
+          <select id="hour" name="hour">
+            <option value="24">24-hour</option>
+            <option value="12">12-hour</option>
+          </select>
+        </div>
+      </div>
+
+      <h2>Push</h2>
+      <label for="every">Interval</label>
+      <select id="every" name="every">
+        <option value="0">Off</option>
+        <option value="5">Every 5 minutes</option>
+        <option value="10">Every 10 minutes</option>
+        <option value="15">Every 15 minutes</option>
+        <option value="30">Every 30 minutes</option>
+        <option value="60">Every 60 minutes</option>
+      </select>
+      <label class="choice"><input id="pushEvents" type="checkbox"> Event stream (<code>GET /events</code>)</label>
+      <label class="choice"><input id="pushSse" type="checkbox"> Legacy SSE sessions (<code>GET /sse</code>)</label>
+      <label class="choice"><input id="pushHttp" type="checkbox"> Streamable HTTP sessions</label>
+      <p>
+        <button type="button" id="read">Read settings</button>
+        <button type="submit">Save</button>
+        <button type="button" class="quiet" id="enable">Enable event-stream push</button>
+      </p>
+    </form>
+
+    <p id="status" class="muted">Not loaded.</p>
+    <p id="listen" class="muted" hidden></p>
+
+    <h2>Call</h2>
+    <pre id="sent">Waiting.</pre>
+    <h2>Response</h2>
+    <pre id="raw" class="scroll">Waiting.</pre>
+  </main>
+  <footer>
+    <a href="https://github.com/markusvankempen/literature-clock-mcp">literature-clock-mcp</a>
+    · <a href="events.html">Event stream</a>
+    · <a href="index.html">All clients</a>
+  </footer>
+  <script>
+    const form = document.getElementById("settings");
+    const status = document.getElementById("status");
+    const listen = document.getElementById("listen");
+    const sent = document.getElementById("sent");
+    const raw = document.getElementById("raw");
+    const preset = new URLSearchParams(location.search).get("mcp");
+    if (preset) document.getElementById("url").value = preset;
+
+    function mcpUrl() {
+      return document.getElementById("url").value.trim();
+    }
+
+    function eventsUrl(mcp) {
+      const trimmed = mcp.replace(/\/$/, "");
+      if (trimmed.endsWith("/mcp")) return trimmed.slice(0, -4) + "/events";
+      return trimmed + "/events";
+    }
+
+    function payloadOf(message) {
+      if (message?.error) return null;
+      const structured = message?.result?.structuredContent;
+      if (structured && typeof structured === "object") return structured;
+      const text = (message?.result?.content || []).find((part) => part.type === "text")?.text;
+      if (!text) return null;
+      try { return JSON.parse(text); } catch { return { text }; }
+    }
+
+    function errorText(message, response) {
+      if (message?.error?.message) return message.error.message;
+      const text = (message?.result?.content || []).find((part) => part.type === "text")?.text;
+      if (message?.result?.isError && text) return text;
+      if (response && !response.ok) return "HTTP " + response.status;
+      return "";
+    }
+
+    async function readBody(response) {
+      const text = await response.text();
+      const type = response.headers.get("content-type") || "";
+      if (type.includes("text/event-stream") || text.trimStart().startsWith("data:")) {
+        const messages = text.split("\n")
+          .filter((row) => row.startsWith("data:"))
+          .map((row) => JSON.parse(row.slice(5).trim()));
+        return messages.at(-1) || { raw: text };
+      }
+      try { return JSON.parse(text); } catch { return { raw: text, status: response.status }; }
+    }
+
+    async function callTool(name, args) {
+      const headers = {
+        "Content-Type": "application/json",
+        Accept: "application/json, text/event-stream"
+      };
+      const key = document.getElementById("key").value.trim();
+      if (key) headers.Authorization = "Bearer " + key;
+      const body = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name, arguments: args }
+      };
+      sent.textContent = JSON.stringify({ url: mcpUrl(), headers, body }, null, 2);
+      const response = await fetch(mcpUrl(), { method: "POST", headers, body: JSON.stringify(body) });
+      const message = await readBody(response);
+      raw.textContent = JSON.stringify(message, null, 2);
+      const failure = errorText(message, response);
+      if (failure) throw new Error(failure);
+      return payloadOf(message);
+    }
+
+    function fillSources(sources, selected) {
+      const select = document.getElementById("source");
+      const current = selected || select.value;
+      if (!Array.isArray(sources) || !sources.length) return;
+      select.replaceChildren();
+      for (const item of sources) {
+        const option = document.createElement("option");
+        option.value = item.id;
+        option.textContent = item.label ? item.label + " (" + item.id + ")" : item.id;
+        select.append(option);
+      }
+      if ([...select.options].some((option) => option.value === current)) select.value = current;
+    }
+
+    function fill(payload) {
+      const clock = payload.clock || {};
+      if (clock.defaultSource) document.getElementById("source").value = clock.defaultSource;
+      if (clock.defaultCount) document.getElementById("count").value = String(clock.defaultCount);
+      if (clock.timeZone) document.getElementById("zone").value = clock.timeZone;
+      if (clock.hourClock) document.getElementById("hour").value = clock.hourClock;
+      const push = payload.push || {};
+      document.getElementById("every").value = String(push.everyMinutes || 0);
+      const dest = push.destinations || {};
+      document.getElementById("pushEvents").checked = Boolean(dest.events);
+      document.getElementById("pushSse").checked = Boolean(dest.sse);
+      document.getElementById("pushHttp").checked = Boolean(dest.streamableHttp);
+      const last = push.last || {};
+      const where = eventsUrl(mcpUrl());
+      status.textContent = "Auth is " + (payload.authMode || "unknown") + ". "
+        + (dest.events && Number(push.everyMinutes)
+          ? "Event-stream push is on, every " + push.everyMinutes + " minutes."
+          : "Event-stream push is off.");
+      if (last.time) status.textContent += " Last push was " + last.time + ".";
+      listen.hidden = false;
+      listen.replaceChildren();
+      if (dest.events) {
+        listen.append("Subscribe on ");
+        const link = document.createElement("a");
+        link.href = "events.html?url=" + encodeURIComponent(where);
+        link.textContent = "the event stream";
+        listen.append(link, ".");
+      } else {
+        listen.textContent = "Turn on Event stream, then open the Events page.";
+      }
+    }
+
+    function argumentsFromForm() {
+      return {
+        defaultSource: document.getElementById("source").value,
+        defaultCount: Number(document.getElementById("count").value),
+        timeZone: document.getElementById("zone").value.trim() || "device",
+        hourClock: document.getElementById("hour").value,
+        pushEveryMinutes: Number(document.getElementById("every").value),
+        pushEvents: document.getElementById("pushEvents").checked,
+        pushSse: document.getElementById("pushSse").checked,
+        pushHttp: document.getElementById("pushHttp").checked
+      };
+    }
+
+    document.getElementById("read").addEventListener("click", async () => {
+      status.textContent = "Reading…";
+      try {
+        const sources = await callTool("list_sources", {});
+        fillSources(sources?.sources, document.getElementById("source").value);
+        fill(await callTool("get_settings", {}));
+      } catch (error) {
+        status.textContent = error.message + " Serve this page from localhost, or set CORS_ORIGINS on the server.";
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      status.textContent = "Saving…";
+      try {
+        fill(await callTool("update_settings", argumentsFromForm()));
+        status.textContent = "Saved. " + status.textContent;
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
+    document.getElementById("enable").addEventListener("click", async () => {
+      if (document.getElementById("every").value === "0") document.getElementById("every").value = "5";
+      document.getElementById("pushEvents").checked = true;
+      form.requestSubmit();
+    });
+  </script>
+</body>
+</html>

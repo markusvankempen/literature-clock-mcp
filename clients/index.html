@@ -22,9 +22,11 @@
     <a href="vscode.html">VS Code</a>
     <a href="claude.html">Claude</a>
     <a href="browser.html">Browser</a>
+    <a href="events.html">Events</a>
+    <a href="settings.html">Settings</a>
   </nav>
   <main>
-    <p class="lead">These pages are the copy you paste into an editor, and a browser that calls <code>get_quote</code> over Streamable HTTP.</p>
+    <p class="lead">These pages are the copy you paste into an editor, a browser that calls <code>get_quote</code>, and a page that subscribes to the quote push.</p>
     <p class="muted">The server is the npm package <a href="https://www.npmjs.com/package/literature-clock-mcp">literature-clock-mcp</a>. A hosted clock is at <a href="https://literature-clock-mcp.onrender.com/">literature-clock-mcp.onrender.com</a>. Its MCP URL is <code>https://literature-clock-mcp.onrender.com/mcp</code>.</p>
 
     <a class="card" href="cursor.html">
@@ -42,6 +44,14 @@
     <a class="card" href="browser.html">
       <strong>Browser</strong>
       <span>A page that posts <code>tools/call</code> for <code>get_quote</code> and shows the line.</span>
+    </a>
+    <a class="card" href="events.html">
+      <strong>Event stream</strong>
+      <span>Subscribe to <code>GET /events</code>. The server sends <code>ready</code>, then a <code>quote</code> when push runs.</span>
+    </a>
+    <a class="card" href="settings.html">
+      <strong>Settings</strong>
+      <span>Call <code>get_settings</code> and <code>update_settings</code>. Change the clock, and turn on the event-stream push.</span>
     </a>
 
     <h2>Open these pages</h2>

@@ -9,6 +9,8 @@ HTML pages that show how to connect a client to [literature-clock-mcp](https://g
 | [vscode.html](vscode.html) | VS Code `mcp.json` |
 | [claude.html](claude.html) | Claude Desktop, including `mcp-remote` |
 | [browser.html](browser.html) | A page that calls `get_quote` |
+| [events.html](events.html) | Subscribe to `GET /events` and show a pushed quote |
+| [settings.html](settings.html) | Read and change settings, including the event-stream push |
 
 Open `index.html` in a browser. The browser client has to be served from localhost so its origin is allowed:
 

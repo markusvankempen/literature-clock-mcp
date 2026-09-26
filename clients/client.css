@@ -97,6 +97,8 @@ pre {
   line-height: 1.45;
 }
 
+pre.scroll { max-height: 16rem; }
+
 .codehead {
   display: flex;
   justify-content: space-between;
@@ -140,6 +142,12 @@ input, select {
 }
 
 form { padding: 0.4rem 1rem 1rem; }
+
+form p { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+
+label.choice { display: flex; align-items: center; gap: 0.45rem; }
+
+label.choice input { width: auto; }
 
 .row {
   display: grid;

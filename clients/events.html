@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Event stream · Literature Clock</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg">
+  <link rel="stylesheet" href="client.css">
+</head>
+<body>
+  <header>
+    <img src="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg" alt="">
+    <div>
+      <h1>Event stream</h1>
+      <p>Subscribe to <code>GET /events</code> and wait for a pushed line.</p>
+    </div>
+  </header>
+  <nav>
+    <a href="index.html">Clients</a>
+    <a href="cursor.html">Cursor</a>
+    <a href="vscode.html">VS Code</a>
+    <a href="claude.html">Claude</a>
+    <a href="browser.html">Browser</a>
+    <a href="events.html" aria-current="page">Events</a>
+    <a href="settings.html">Settings</a>
+  </nav>
+  <main>
+    <p>This is the custom-client stream. The first frame is <code>event: ready</code>. Later frames are <code>event: quote</code>, the same JSON the schedule sends. Push is off until an interval is set and <strong>Event stream</strong> is on. Use <a href="settings.html">Settings</a> to turn that on, or the clock’s own Settings → Push. <strong>Send now</strong> there delivers a line without waiting for the minute.</p>
+    <p class="muted">Serve this folder from localhost. A loopback page may open the stream. A page on another site is refused until <code>CORS_ORIGINS</code> includes that origin. The browser’s <code>EventSource</code> cannot set a bearer key, so this page uses <code>fetch</code> and reads the stream.</p>
+
+    <form id="sub">
+      <label for="url">Events URL</label>
+      <input id="url" name="url" value="https://literature-clock-mcp.onrender.com/events" autocomplete="off" spellcheck="false">
+      <label for="key">Bearer key <span class="muted">leave empty while auth is off</span></label>
+      <input id="key" name="key" type="password" autocomplete="off">
+      <p>
+        <button type="submit">Subscribe</button>
+        <button type="button" class="quiet" id="stop">Stop</button>
+      </p>
+    </form>
+
+    <h2>Status</h2>
+    <p id="status" class="muted">Not subscribed.</p>
+
+    <h2>Latest line</h2>
+    <div class="result" id="line" aria-live="polite">
+      <p class="muted">A quote event appears here.</p>
+    </div>
+
+    <h2>Frames</h2>
+    <pre id="log" class="scroll">Waiting.</pre>
+
+    <h2>The same subscription</h2>
+    <div class="codehead">
+      <p class="muted">EventSource, when no key is required</p>
+      <button type="button" class="quiet" id="copy">Copy</button>
+    </div>
+    <pre id="snippet">const stream = new EventSource("https://literature-clock-mcp.onrender.com/events");
+stream.addEventListener("ready", (event) => {
+  console.log("ready", JSON.parse(event.data));
+});
+stream.addEventListener("quote", (event) => {
+  console.log("quote", JSON.parse(event.data));
+});</pre>
+    <p class="muted">curl keeps the stream open: <code>curl -N https://literature-clock-mcp.onrender.com/events</code>. Legacy MCP sessions use <code>GET /sse</code> and receive <code>notifications/literature-clock/quote</code> when that destination is on. An open Streamable HTTP session can receive the same notification.</p>
+  </main>
+  <footer>
+    <a href="https://github.com/markusvankempen/literature-clock-mcp">literature-clock-mcp</a>
+    · <a href="index.html">All clients</a>
+  </footer>
+  <script>
+    const preset = new URLSearchParams(location.search).get("url");
+    if (preset) document.getElementById("url").value = preset;
+
+    const form = document.getElementById("sub");
+    const status = document.getElementById("status");
+    const line = document.getElementById("line");
+    const log = document.getElementById("log");
+    let controller = null;
+
+    function showQuote(payload) {
+      const item = payload?.lines?.[0];
+      line.replaceChildren();
+      if (!item) {
+        const note = document.createElement("p");
+        note.className = "muted";
+        note.textContent = payload?.time ? "No line for " + payload.time + "." : "The event had no line.";
+        line.append(note);
+        return;
+      }
+      const quote = document.createElement("p");
+      quote.className = "line";
+      quote.textContent = item.text;
+      const cite = document.createElement("p");
+      cite.className = "muted";
+      cite.textContent = [item.citation, item.source_label || payload.requested_label, payload.time].filter(Boolean).join(" · ");
+      line.append(quote, cite);
+    }
+
+    function remember(text) {
+      const prior = log.textContent === "Waiting." ? "" : log.textContent;
+      log.textContent = (text + (prior ? "\n" + prior : "")).slice(0, 6000);
+    }
+
+    function parseFrame(frame) {
+      const clean = frame.replace(/\r/g, "");
+      let name = "message";
+      const data = [];
+      for (const row of clean.split("\n")) {
+        if (!row || row.startsWith(":")) continue;
+        if (row.startsWith("event:")) name = row.slice(6).trim();
+        else if (row.startsWith("data:")) data.push(row.slice(5).replace(/^ /, ""));
+      }
+      if (!data.length) return;
+      let payload;
+      try { payload = JSON.parse(data.join("\n")); }
+      catch { payload = { raw: data.join("\n") }; }
+      remember(name + " " + JSON.stringify(payload));
+      if (name === "ready") {
+        const every = Number(payload.everyMinutes) || 0;
+        status.textContent = payload.events && every
+          ? "Subscribed. A line is pushed every " + every + " minutes."
+          : "Subscribed. Push to this stream is off until Settings → Push sets an interval and turns on Event stream.";
+      }
+      if (name === "quote") showQuote(payload);
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (controller) controller.abort();
+      controller = new AbortController();
+      const headers = { Accept: "text/event-stream" };
+      const key = document.getElementById("key").value.trim();
+      if (key) headers.Authorization = "Bearer " + key;
+      status.textContent = "Connecting…";
+      line.replaceChildren();
+      const waiting = document.createElement("p");
+      waiting.className = "muted";
+      waiting.textContent = "Waiting for a quote event.";
+      line.append(waiting);
+      log.textContent = "Waiting.";
+      try {
+        const response = await fetch(document.getElementById("url").value.trim(), {
+          headers,
+          signal: controller.signal
+        });
+        if (!response.ok || !response.body) {
+          const text = await response.text();
+          status.textContent = "HTTP " + response.status;
+          log.textContent = text || "HTTP " + response.status;
+          return;
+        }
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        while (true) {
+          const chunk = await reader.read();
+          if (chunk.done) break;
+          buffer += decoder.decode(chunk.value, { stream: true });
+          let end;
+          while ((end = buffer.indexOf("\n\n")) >= 0) {
+            parseFrame(buffer.slice(0, end));
+            buffer = buffer.slice(end + 2);
+          }
+        }
+        if (!controller.signal.aborted) status.textContent = "The stream closed.";
+      } catch (error) {
+        if (error.name === "AbortError") {
+          status.textContent = "Stopped.";
+          return;
+        }
+        status.textContent = error.message + " Serve this page from localhost, or set CORS_ORIGINS on the server.";
+      }
+    });
+
+    document.getElementById("stop").addEventListener("click", () => {
+      if (controller) controller.abort();
+    });
+
+    document.getElementById("copy").addEventListener("click", async () => {
+      const button = document.getElementById("copy");
+      try {
+        await navigator.clipboard.writeText(document.getElementById("snippet").textContent);
+        button.textContent = "Copied";
+      } catch {
+        button.textContent = "Copy failed";
+      }
+    });
+  </script>
+</body>
+</html>
