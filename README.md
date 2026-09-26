@@ -98,13 +98,13 @@
 }
 ```
 
-From this folder, before that version is on npm, point `command` at `node`, `args` at `["src/index.js"]`, and `cwd` at this directory. stdio is the default. `npm run http` serves the clock at [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
+This repository is the project home. It does not contain the server source. Install the published package with the `npx` blocks above.
 
 ## Add a hosted server
 
 The same configs work for [Render](https://literature-clock-mcp.onrender.com/), IBM Code Engine, or any host that serves this app over HTTPS. The MCP URL is the site plus `/mcp`. The live Render server is `https://literature-clock-mcp.onrender.com/mcp`. A Code Engine app looks like `https://<app>.<region>.codeengine.appdomain.cloud/mcp`.
 
-The host must run `MCP_MODE=http HOST=0.0.0.0 node src/index.js` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
+The host must run `MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.4` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
 
 When auth mode is `write` or `all`, add a header `Authorization: Bearer <key>`. Auth is `off` on a fresh server, so the blocks below need no key.
 
@@ -160,10 +160,10 @@ No account and no analytics. Books and voices stay on the machine. Literature tr
 
 | | |
 |---|---|
-| **npm** | [literature-clock-mcp](https://www.npmjs.com/package/literature-clock-mcp) (publish from this folder) |
+| **npm** | [literature-clock-mcp](https://www.npmjs.com/package/literature-clock-mcp) |
 | **MCP name** | `io.github.markusvankempen/literature-clock-mcp` |
 | **Name** | Literature Clock · package `literature-clock-mcp` |
-| **Version** | 1.6.4 — `package.json`, `server.json`, and `src/version.js` must match |
+| **Version** | 1.6.4 on npm. This git tree does not contain `src/`. |
 | **Transports** | stdio, Streamable HTTP (`/mcp`), legacy SSE (`/sse`). Each can be turned off in Settings. One stays on. |
 | **Source** | [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) · Chrome twin [chrome-ext-ink-clock](https://github.com/markusvankempen/chrome-ext-ink-clock) |
 
@@ -304,15 +304,6 @@ npx literature-clock-mcp                 # stdio
 MCP_MODE=http npx literature-clock-mcp   # http://127.0.0.1:8080/health
 ```
 
-From this directory before the package is on npm:
-
-```bash
-npm install
-npm test
-npm run test:tools
-npm run http    # http://127.0.0.1:8788/
-```
-
 | URL | What it shows |
 |---|---|
 | `/` | Clock. `?source=literature&time=09:05`. **Another line** skips the line on screen. **Random** picks a different source. **Read** speaks the line. |
@@ -328,30 +319,16 @@ npm run http    # http://127.0.0.1:8788/
 
 The same settings are `get_settings` / `update_settings`, and `GET` or `POST /api/settings`.
 
-## This checkout
-
-```json
-{
-  "mcpServers": {
-    "literature-clock-mcp": {
-      "command": "node",
-      "args": ["src/index.js"],
-      "cwd": "/absolute/path/to/mcp"
-    }
-  }
-}
-```
-
-The browser UI is HTTP only. stdio does not open a page. Run `npm run http`, then open [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
+The browser UI is HTTP only. stdio does not open a page. `MCP_MODE=http npx literature-clock-mcp@1.6.4` serves the clock. The local desk port in development is [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
 
 ## Render
 
-[render.yaml](https://github.com/markusvankempen/literature-clock-mcp/blob/main/render.yaml) in the [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) repo starts this server from the repository. A push to `main` updates [literature-clock-mcp.onrender.com](https://literature-clock-mcp.onrender.com/). Leave `PORT` unset so Render can set it. Bind `0.0.0.0`.
+[render.yaml](https://github.com/markusvankempen/literature-clock-mcp/blob/main/render.yaml) starts the published npm package. This repository does not contain the server source. Leave `PORT` unset so Render can set it. Bind `0.0.0.0`.
 
 **Start command**
 
 ```bash
-MCP_MODE=http HOST=0.0.0.0 node src/index.js
+MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.4
 ```
 
 | Key | Value |
@@ -404,15 +381,7 @@ Settings → Protocols turns stdio, Streamable HTTP, and SSE on or off. At least
 
 ## Publish
 
-See [docs/PUBLISHING.md](docs/PUBLISHING.md).
-
-```bash
-npm test
-npm run test:tools
-npm publish
-```
-
-`files` in `package.json` ships `src/`, `data/` (books and voices), this README, `docs/screenshots/`, `docs/icon.png`, `docs/icon.svg`, `server.json`, `LICENSE`, and `NOTICE`. `npm run prepack` copies the Chrome corpus into `data/` before the tarball is built.
+Publish from the package that contains `src/` and `data/`, not from this git tree. See [docs/PUBLISHING.md](docs/PUBLISHING.md). The npm tarball ships `src/`, `data/` (books and voices), the README, `docs/screenshots/`, `docs/icon.png`, `docs/icon.svg`, `server.json`, `clients/`, `LICENSE`, and `NOTICE`.
 
 npm keywords: `mcp`, `model-context-protocol`, `mcp-server`, `literature-clock`, `ink-clock`, `quotes`, `books`, `voices`, `stdio`, `streamable-http`, `cursor`, `vscode`, `claude`, `clock`.
 
