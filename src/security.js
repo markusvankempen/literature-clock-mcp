@@ -265,13 +265,18 @@ export function createSecurity({ log, saved, onChange } = {}) {
     return toolCounters.get(toolName);
   }
 
+  function withoutPrincipal(entry) {
+    const { principalObject, ...rest } = entry;
+    return { ...callerOf(principalObject), ...rest };
+  }
+
   function pushErrorLog(entry) {
-    errorLog.unshift({ at: now(), ...callerOf(entry.principalObject), ...entry });
+    errorLog.unshift({ at: now(), ...withoutPrincipal(entry) });
     if (errorLog.length > MAX_ERROR_LOG) errorLog.pop();
   }
 
   function pushCallTrace(entry) {
-    callTrace.unshift({ at: now(), ...callerOf(entry.principalObject), ...entry });
+    callTrace.unshift({ at: now(), ...withoutPrincipal(entry) });
     if (callTrace.length > MAX_AUDIT_LOG) callTrace.pop();
   }
 
@@ -517,8 +522,16 @@ export function createSecurity({ log, saved, onChange } = {}) {
     state.lastDeniedAt = now();
     counterFor(toolName).denied += 1;
     auditFn({ tool: toolName, principal: principal?.label || "anonymous", outcome: `denied — ${extra.reason || "unauthorized"}` });
+    noteInvocation(toolName, principal, "denied");
     if (state.auditMode) {
-      pushCallTrace({ type: "denied", tool: toolName, principal: principal?.label || "anonymous", reason: extra.reason || "unauthorized", error });
+      pushCallTrace({
+        type: "denied",
+        tool: toolName,
+        principal: principal?.label || "anonymous",
+        principalObject: principal,
+        reason: extra.reason || "unauthorized",
+        error,
+      });
     }
     return { ok: false, principal, error, ...extra };
   }
@@ -605,6 +618,7 @@ export function createSecurity({ log, saved, onChange } = {}) {
      */
     setToolAuth(toolName, requireAuth) {
       if (!toolAuthOverrides.has(toolName)) return this.snapshot();
+      if (toolName === "describe_server") return this.snapshot();
       const on = Boolean(requireAuth);
       toolAuthOverrides.set(toolName, on);
       auditFn({ tool: "admin.tool_auth", outcome: `${toolName} auth-lock ${on ? "on" : "off"}` });
@@ -671,6 +685,51 @@ export function createSecurity({ log, saved, onChange } = {}) {
       return { ok: true, username: u };
     },
 
+    exportUsers() {
+      return [...users.values()]
+        .filter((user) => user.source === "saved")
+        .map((user) => ({ username: user.username, passwordHash: user.passwordHash, scopes: user.scopes }));
+    },
+
+    replaceSavedUsers(rows) {
+      if (!Array.isArray(rows)) return { ok: false, error: "users must be a list." };
+      for (const [name, user] of [...users.entries()]) {
+        if (user.source === "saved") users.delete(name);
+      }
+      let kept = 0;
+      for (const row of rows) {
+        const name = String(row?.username || "").trim().toLowerCase();
+        const passwordHash = String(row?.passwordHash || "");
+        if (!/^[a-z0-9][a-z0-9._-]{0,31}$/.test(name) || !/^[a-f0-9]{64}$/.test(passwordHash)) continue;
+        if (name === String(state.adminUser || "").toLowerCase()) continue;
+        if (users.get(name)?.source === "env") continue;
+        users.set(name, {
+          username: name,
+          passwordHash,
+          scopes: normalizeScopes(row.scopes, ["read"]),
+          source: "saved",
+        });
+        kept += 1;
+      }
+      auditFn({ tool: "admin.import", outcome: `imported ${kept} saved users` });
+      remember();
+      return { ok: true, users: kept };
+    },
+
+    exportLog() {
+      return {
+        kind: "literature-clock-log",
+        version: 1,
+        exportedAt: now(),
+        auditMode: state.auditMode,
+        toolCounters: Object.fromEntries(toolCounters),
+        errors: errorLog.slice(),
+        trace: callTrace.slice(),
+        audit: adminEvents.slice(),
+        invocations: invocations.slice(),
+      };
+    },
+
     deleteUser(username) {
       const u = String(username || "").trim().toLowerCase();
       const user = users.get(u);
@@ -707,11 +766,13 @@ export function createSecurity({ log, saved, onChange } = {}) {
      */
     recordSuccess(toolName, principal, params) {
       counterFor(toolName).success += 1;
+      noteInvocation(toolName, principal, "success");
       if (state.auditMode) {
         pushCallTrace({
           type: "success",
           tool: toolName,
           principal: principal?.label || "anonymous",
+          principalObject: principal,
           params: params || {},
         });
       }
@@ -723,9 +784,11 @@ export function createSecurity({ log, saved, onChange } = {}) {
      */
     recordError(toolName, principal, params, error) {
       counterFor(toolName).error += 1;
+      noteInvocation(toolName, principal, "error");
       pushErrorLog({
         tool: toolName,
         principal: principal?.label || "anonymous",
+        principalObject: principal,
         params: params || {},
         error: String(error),
       });
@@ -734,6 +797,7 @@ export function createSecurity({ log, saved, onChange } = {}) {
           type: "error",
           tool: toolName,
           principal: principal?.label || "anonymous",
+          principalObject: principal,
           params: params || {},
           error: String(error),
         });

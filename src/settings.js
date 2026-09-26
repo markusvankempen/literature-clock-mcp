@@ -153,3 +153,89 @@ export function applySettings({ security, prefs, push, patch = {}, onToolsChange
   if (structural && typeof onToolsChanged === "function") onToolsChanged();
   return settingsPayload(security, prefs, push);
 }
+
+export function settingsDocument(security, prefs, push) {
+  const payload = settingsPayload(security, prefs, push);
+  const mqtt = payload.push?.mqtt || {};
+  return {
+    kind: "literature-clock-settings",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    clock: payload.clock,
+    authMode: payload.authMode,
+    rateLimit: payload.rateLimit,
+    auditMode: payload.auditMode,
+    protocols: payload.protocols,
+    uiRequireAuth: payload.uiRequireAuth,
+    push: {
+      everyMinutes: payload.push?.everyMinutes ?? 0,
+      destinations: payload.push?.destinations || {},
+      mqtt: {
+        url: mqtt.url || "",
+        topic: mqtt.topic || "",
+        username: mqtt.username || "",
+        clientId: mqtt.clientId || "",
+      },
+    },
+    tools: (payload.tools || []).map((tool) => ({
+      name: tool.name,
+      enabled: tool.enabled !== false,
+      requireAuth: tool.requireAuth === true,
+    })),
+    users: security.exportUsers(),
+  };
+}
+
+export function importSettingsDocument(doc, { security, prefs, push, onToolsChanged } = {}) {
+  if (!doc || doc.kind !== "literature-clock-settings" || Number(doc.version) !== 1) {
+    const error = new Error("That file is not a Literature Clock settings export.");
+    error.code = "bad_import";
+    throw error;
+  }
+  const clock = doc.clock || {};
+  const rate = doc.rateLimit || {};
+  const protocols = doc.protocols || {};
+  const patch = {
+    defaultSource: clock.defaultSource,
+    defaultCount: clock.defaultCount,
+    timeZone: clock.timeZone,
+    hourClock: clock.hourClock,
+    authMode: doc.authMode,
+    rateLimitEnabled: rate.enabled,
+    rateLimit: rate.limit,
+    rateLimitWindowSec: rate.windowMs !== undefined ? Number(rate.windowMs) / 1000 : undefined,
+    auditMode: doc.auditMode,
+    stdioEnabled: protocols.stdio,
+    streamableHttpEnabled: protocols.streamableHttp,
+    sseEnabled: protocols.sse,
+    uiRequireAuth: doc.uiRequireAuth,
+  };
+  if (doc.push && typeof doc.push === "object") {
+    const dest = doc.push.destinations || {};
+    const mqtt = doc.push.mqtt || {};
+    Object.assign(patch, {
+      pushEveryMinutes: doc.push.everyMinutes,
+      pushEvents: dest.events,
+      pushSse: dest.sse,
+      pushHttp: dest.streamableHttp,
+      mqttEnabled: dest.mqtt,
+      mqttUrl: mqtt.url,
+      mqttTopic: mqtt.topic,
+      mqttUsername: mqtt.username,
+      mqttClientId: mqtt.clientId,
+    });
+  }
+  if (Array.isArray(doc.tools)) {
+    patch.enabledTools = doc.tools.filter((tool) => tool.enabled !== false).map((tool) => tool.name);
+    patch.lockedTools = doc.tools.filter((tool) => tool.requireAuth === true).map((tool) => tool.name);
+  }
+  applySettings({
+    security,
+    prefs,
+    push,
+    onToolsChanged,
+    patch,
+  });
+  if (Array.isArray(doc.users)) security.replaceSavedUsers(doc.users);
+  return settingsPayload(security, prefs, push);
+}

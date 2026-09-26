@@ -10,7 +10,7 @@ import { AUTHOR, LITERATURE } from "./meta.js";
 import { clockPage } from "./pages.js";
 import { listSchemas, readSchema } from "./schemas.js";
 import { createPush, publishQuote, quoteDue, zonedMinute } from "./push.js";
-import { applySettings, settingsPayload } from "./settings.js";
+import { applySettings, importSettingsDocument, settingsDocument, settingsPayload } from "./settings.js";
 import { generateTraffic } from "./traffic.js";
 import { VERSION } from "./version.js";
 
@@ -162,7 +162,7 @@ export async function startHttp({ store, security, prefs, push }) {
   const app = express();
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
-  app.use(express.urlencoded({ extended: true }));
+  app.use(express.urlencoded({ extended: true, limit: "256kb" }));
 
   const zone = () => prefs.snapshot();
   const outlet = push || createPush();
@@ -544,6 +544,46 @@ export async function startHttp({ store, security, prefs, push }) {
       return;
     }
     res.json({ ok: true });
+  });
+
+  function sendDownload(res, filename, body) {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(`${JSON.stringify(body, null, 2)}\n`);
+  }
+
+  app.get("/admin/export/settings", requireAdmin, (_req, res) => {
+    sendDownload(res, "literature-clock-settings.json", settingsDocument(security, prefs, outlet));
+  });
+
+  app.get("/admin/export/log", requireAdmin, (_req, res) => {
+    sendDownload(res, "literature-clock-log.json", security.exportLog());
+  });
+
+  app.post("/admin/import", requireAdmin, (req, res) => {
+    try {
+      const raw = String(req.body?.document || "");
+      if (!raw.trim()) throw new Error("Paste a settings file, or choose one.");
+      if (raw.length > 200000) throw new Error("That file is too large.");
+      importSettingsDocument(JSON.parse(raw), {
+        security,
+        prefs,
+        push: outlet,
+        onToolsChanged: broadcastToolListChanged,
+      });
+      if (wantsHtml(req)) {
+        res.redirect(`/admin?notice=${encodeURIComponent("Settings imported.")}#set-backup`);
+        return;
+      }
+      res.json(viewSettings());
+    } catch (error) {
+      const message = error instanceof SyntaxError ? "That file is not JSON." : error.message;
+      if (wantsHtml(req)) {
+        res.redirect(`/admin?notice=${encodeURIComponent(message)}#set-backup`);
+        return;
+      }
+      res.status(400).json({ ok: false, error: message });
+    }
   });
 
   app.post("/admin/logout", (req, res) => {

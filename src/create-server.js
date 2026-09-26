@@ -2,7 +2,7 @@ import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mc
 import { McpError, ErrorCode } from "@modelcontextprotocol/sdk/types.js";
 import { completable } from "@modelcontextprotocol/sdk/server/completable.js";
 import { z } from "zod";
-import { AUTHOR } from "./meta.js";
+import { AUTHOR, HOME } from "./meta.js";
 import { VERSION } from "./version.js";
 import { createPush } from "./push.js";
 import { applySettings, settingsPayload } from "./settings.js";
@@ -86,6 +86,7 @@ const OUT = {
       name: z.string(),
       version: z.string(),
       tool_count: z.number(),
+      homepage: z.string(),
     }),
     author: z.object({
       name: z.string(),
@@ -451,7 +452,7 @@ export function createMcpServer({ store, security, prefs, push, requestHeaders =
       const authenticated = principal.type !== "anonymous" && principal.type !== "invalid";
       return {
         ok: true,
-        server: { name: "literature-clock-mcp", version: VERSION, tool_count: TOOL_COUNT },
+        server: { name: "literature-clock-mcp", version: VERSION, tool_count: TOOL_COUNT, homepage: HOME },
         author: {
           name: AUTHOR.name,
           url: AUTHOR.url,

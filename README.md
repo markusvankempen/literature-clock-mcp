@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img alt="version 1.6.0" src="https://img.shields.io/badge/version-1.6.0-2ea44f"></a>
+  <a href="package.json"><img alt="version 1.6.1" src="https://img.shields.io/badge/version-1.6.1-2ea44f"></a>
   <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
   <a href="package.json"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP stdio and HTTP" src="https://img.shields.io/badge/MCP-stdio%20%7C%20HTTP-111111"></a>
@@ -96,6 +96,58 @@
 
 From this folder, before that version is on npm, point `command` at `node`, `args` at `["src/index.js"]`, and `cwd` at this directory. stdio is the default. `npm run http` serves the clock at [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
 
+## Add a hosted server
+
+The same configs work for [Render](https://literature-clock-mcp.onrender.com/), IBM Code Engine, or any host that serves this app over HTTPS. The MCP URL is the site plus `/mcp`. The live Render server is `https://literature-clock-mcp.onrender.com/mcp`. A Code Engine app looks like `https://<app>.<region>.codeengine.appdomain.cloud/mcp`.
+
+The host must run `MCP_MODE=http HOST=0.0.0.0 node src/index.js` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
+
+When auth mode is `write` or `all`, add a header `Authorization: Bearer <key>`. Auth is `off` on a fresh server, so the blocks below need no key.
+
+**Cursor** — this project: `.cursor/mcp.json`. Every project: `~/.cursor/mcp.json`.
+
+```json
+{
+  "mcpServers": {
+    "literature-clock-mcp": {
+      "url": "https://literature-clock-mcp.onrender.com/mcp"
+    }
+  }
+}
+```
+
+Save the file. Open **Cursor Settings → MCP** and turn **literature-clock-mcp** on. A green dot means the handshake worked. In Agent chat, ask: `ask literature-clock-mcp for the current quote`.
+
+**VS Code** — workspace `.vscode/mcp.json`, or Command Palette → **MCP: Open User Configuration**.
+
+```json
+{
+  "servers": {
+    "literature-clock-mcp": {
+      "type": "http",
+      "url": "https://literature-clock-mcp.onrender.com/mcp"
+    }
+  }
+}
+```
+
+Command Palette → **MCP: List Servers** → start **literature-clock-mcp**. In Copilot Chat, confirm the server is selected in the tools list, then ask for the current quote.
+
+**Claude Desktop** — the desktop file only starts a local process. `mcp-remote` opens the hosted URL. Config path: `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS, `%APPDATA%\Claude\claude_desktop_config.json` on Windows. Quit Claude and open it again after you save.
+
+```json
+{
+  "mcpServers": {
+    "literature-clock-mcp": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://literature-clock-mcp.onrender.com/mcp"]
+    }
+  }
+}
+```
+
+The first call after a free Render instance has been idle can take a moment while the process wakes. The clock on the server is that machine’s clock. On Render that is UTC, so “now” is four hours ahead of Toronto.
+
 An MCP server that tells the time the way a literature clock does: one sentence that names that exact minute.
 
 The default source is **Literature**, Johannes Enevoldsen's [literature-clock](https://literature-clock.jenevoldsen.com/) collection ([CC BY-NC-SA 2.5](https://creativecommons.org/licenses/by-nc-sa/2.5/)). **Books** are copyright-free lines bundled with the server. The other sources are original voices written for this clock, not quotations from films or living authors.
@@ -107,7 +159,7 @@ No account and no analytics. Books and voices stay on the machine. Literature tr
 | **npm** | [literature-clock-mcp](https://www.npmjs.com/package/literature-clock-mcp) (publish from this folder) |
 | **MCP name** | `io.github.markusvankempen/literature-clock-mcp` |
 | **Name** | Literature Clock · package `literature-clock-mcp` |
-| **Version** | 1.6.0 — `package.json`, `server.json`, and `src/version.js` must match |
+| **Version** | 1.6.1 — `package.json`, `server.json`, and `src/version.js` must match |
 | **Transports** | stdio, Streamable HTTP (`/mcp`), legacy SSE (`/sse`). Each can be turned off in Settings. One stays on. |
 | **Source** | [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) · Chrome twin [chrome-ext-ink-clock](https://github.com/markusvankempen/chrome-ext-ink-clock) |
 
@@ -146,7 +198,7 @@ Sign-in before Settings on a fresh session.
 | Hide pages until sign-in | Settings → Protocols. JSON and MCP stay available |
 | Health, smoke, traffic | `/health`, `/test`. Traffic needs a sign-in or an API key. It fills the log with reads, a bad time, an unknown schema, and a rejected key |
 | Settings | Clock defaults, auth mode, rate limit, call trace, tool gates, API keys |
-| Log | Counters, errors, call trace, audit trail |
+| Log | Counters, errors, call trace, audit trail. Export downloads the same, including who called (user, API key, or anonymous). |
 | Auth | `off`, `write`, or `all`. Keys on Settings. `describe_server` stays open |
 
 ## Quote sources
@@ -217,7 +269,7 @@ npm run http    # http://127.0.0.1:8788/
 | URL | What it shows |
 |---|---|
 | `/` | Clock. `?source=literature&time=09:05`. **Another line** skips the line on screen. **Random** picks a different source. **Read** speaks the line. |
-| `/admin` | Settings. Laptop sign-in `demo` / `demo`. Protocols, and hide-pages-until-sign-in, live on the Protocols tab. Set `ADMIN_PASSWORD` before exposing the port. |
+| `/admin` | Settings. Laptop sign-in `demo` / `demo` unless `ADMIN_USER` and `ADMIN_PASSWORD` are set. On a public bind the laptop password is off until `ADMIN_PASSWORD` is set. Backup exports and imports settings. |
 | `/health` | Process is up. `cwd` only on localhost. |
 | `/test` | Read-only smoke, plus **Generate traffic** after a sign-in or `Authorization: Bearer` key (reads, a bad time, an unknown schema, a rejected key). |
 | `/tools` | Tool list. Run `list_schemas` and `get_schema`, or load `tools/list`. |
@@ -244,17 +296,59 @@ The same settings are `get_settings` / `update_settings`, and `GET` or `POST /ap
 
 The browser UI is HTTP only. stdio does not open a page. Run `npm run http`, then open [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
 
+## Render
+
+Use the [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) repo. Leave the Root Directory empty so the start command runs in the folder that contains `package.json`.
+
+`npm start` stays on stdio and never opens a port, so Render’s health check fails. `npm run http` listens on `127.0.0.1:8788`. Render assigns `PORT` and only reaches a process bound to `0.0.0.0`. Leave `PORT` unset.
+
+**Start command**
+
+```bash
+MCP_MODE=http HOST=0.0.0.0 node src/index.js
+```
+
+| Key | Value |
+|---|---|
+| `MCP_MODE` | `http` |
+| `HOST` | `0.0.0.0` |
+| `ADMIN_PASSWORD` | a password you choose |
+
+Health check path: `/health`.
+
+The clock is `https://<your-service>.onrender.com/`. Settings sign-in uses `ADMIN_USER` (default `demo`) and `ADMIN_PASSWORD`. The laptop password `demo` is off on that public address. IDE setup for that URL, and for Code Engine, is under [Add a hosted server](#add-a-hosted-server).
+
+### Example
+
+In Cursor, with [literature-clock-mcp.onrender.com](https://literature-clock-mcp.onrender.com/) connected:
+
+> ask literature-clock-mcp for the current quote
+
+The Literature Clock on Render answered for **16:01**, the clock on that server. That is 12:01 PM in Toronto.
+
+> A little after four o’clock, Pippa meandered over to Dot’s house carrying a bottle of wine she had been keeping in reserve and wondering if she could possibly be pregnant in spite of the vestigial coil still lodged in her uterus like astronaut litter abandoned on the moon.
+
+*The Private Lives of Pippa Lee*, by Rebecca Miller. The time phrase is “A little after four o’clock.” The source was Literature.
+
 ## Auth
 
-Auth defaults to `off`.
+Auth defaults to `off`. Settings and Log show a lock because they need a sign-in.
 
 | Mode | Behaviour |
 |---|---|
-| `off` | No credential. |
+| `off` | No credential. A tool can still be locked on its own under Settings → Tool gates. |
 | `write` | `update_settings` needs a key. Read tools stay open. |
 | `all` | Every tool except `describe_server` needs `Authorization: Bearer <key>` or `MCP_API_KEY`. |
 
-`RATE_LIMIT` defaults to 60 calls per minute. Issue and revoke keys on `/admin`. `/health` only means the process is up; `/test` runs the quote checks.
+| Variable | What it does |
+|---|---|
+| `ADMIN_USER` | Settings sign-in name. Default `demo`. |
+| `ADMIN_PASSWORD` | Settings sign-in password. Default `demo` on this laptop. On a public bind (`HOST=0.0.0.0`, Render, or a container) there is no default: set this before the process starts, then restart. It is not stored in Settings and is not part of an export. |
+| `RATE_LIMIT` | Max tool calls per minute. Default 60. |
+
+Issue and revoke keys on `/admin`. `/health` only means the process is up; `/test` runs the quote checks.
+
+Settings → Backup downloads the clock, auth, protocols, schedule, tool gates, and saved users (password hashes). Import restores that file. API keys and the MQTT password are not in it. Log → Export log and trace downloads counters, errors, the call trace, and the audit trail.
 
 Settings → Protocols turns stdio, Streamable HTTP, and SSE on or off. At least one stays on. The same tab can hide the HTML pages until sign-in. `describe_server` and `update_settings` still answer on a protocol that is on, so a turned-off transport can be turned back on.
 

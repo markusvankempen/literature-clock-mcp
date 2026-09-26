@@ -9,7 +9,10 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { createStore } from "./store.js";
+import { createPrefs } from "./prefs.js";
+import { createPush } from "./push.js";
 import { createSecurity } from "./security.js";
+import { importSettingsDocument, settingsDocument } from "./settings.js";
 import { PROMPTS, TOOL_COUNT } from "./create-server.js";
 import { AUTHOR } from "./meta.js";
 import { listSchemas, readSchema } from "./schemas.js";
@@ -99,7 +102,21 @@ async function phase1() {
     assert(authed.ok && authed.principal.type === "apikey", "api key principal");
     security.recordError("get_quote", authed.principal, { time: "99:99" }, "bad time");
     const log = security.snapshot().errorLog[0];
-    assert(log && log.at && log.tool === "get_quote", "error log timestamp");
+    assert(log && log.at && log.tool === "get_quote" && log.caller === "apikey", "error log names the api key caller");
+    const exported = security.exportLog();
+    assert(exported.kind === "literature-clock-log" && exported.errors[0].caller === "apikey" && exported.invocations[0].caller === "apikey", "log export keeps the caller");
+    security.setAuditMode(true);
+    security.recordSuccess("list_sources", authed.principal, {});
+    assert(security.exportLog().trace[0].caller === "apikey", "trace export names the caller");
+    const prefs = createPrefs({ isSource: () => true });
+    const push = createPush();
+    const doc = settingsDocument(security, prefs, push);
+    assert(doc.kind === "literature-clock-settings" && doc.push.mqtt.password === undefined && !doc.users.some((user) => user.password), "settings export omits secrets");
+    doc.clock.hourClock = "12";
+    doc.tools = doc.tools.map((tool) => tool.name === "get_quote" ? { ...tool, requireAuth: true } : tool);
+    importSettingsDocument(doc, { security, prefs, push });
+    assert(prefs.snapshot().hourClock === "12" && security.snapshot().toolAuthOverrides.get_quote === true, "settings import restores the clock and a lock");
+    assert(security.setToolAuth("describe_server", true).toolAuthOverrides.describe_server === false, "describe_server cannot be locked");
   });
 
   withEnv({ AUTH_MODE: "all", RATE_LIMIT_ENABLED: "0", API_KEY: undefined }, () => {

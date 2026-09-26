@@ -3,7 +3,7 @@
   "name": "io.github.markusvankempen/literature-clock-mcp",
   "title": "Literature Clock",
   "description": "A line for the current minute, from literature, copyright-free books, or an original voice.",
-  "websiteUrl": "https://markusvankempen.github.io/",
+  "websiteUrl": "https://github.com/markusvankempen/literature-clock-mcp",
   "repository": {
     "url": "https://github.com/markusvankempen/literature-clock-mcp",
     "source": "github"
@@ -12,30 +12,40 @@
     {
       "src": "https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.png",
       "mimeType": "image/png",
-      "sizes": [
-        "512x512"
-      ],
+      "sizes": ["512x512"],
       "theme": "light"
     },
     {
       "src": "https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg",
       "mimeType": "image/svg+xml",
-      "sizes": [
-        "any"
-      ],
+      "sizes": ["any"],
       "theme": "light"
     }
   ],
-  "version": "1.6.0",
+  "version": "1.6.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "literature-clock-mcp",
-      "version": "1.6.0",
+      "version": "1.6.1",
       "transport": {
         "type": "stdio"
       },
       "environmentVariables": [
+        {
+          "name": "ADMIN_PASSWORD",
+          "description": "Password for the Settings and Log pages. Required when HOST is 0.0.0.0 or the process runs in a container. Laptop default is demo until this is set.",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "ADMIN_USER",
+          "description": "Sign-in name for Settings. Default demo.",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
         {
           "name": "MCP_API_KEY",
           "description": "API key for tool calls when AUTH_MODE is write or all. Issue one on /admin.",

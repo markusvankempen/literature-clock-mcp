@@ -1,4 +1,6 @@
 /** Publisher identity. server.json has no author field; the registry keeps this under publisher-provided metadata. */
+export const HOME = "https://github.com/markusvankempen/literature-clock-mcp";
+
 export const AUTHOR = {
   name: "Markus van Kempen",
   url: "https://markusvankempen.github.io/",

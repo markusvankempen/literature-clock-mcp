@@ -1,6 +1,6 @@
 /** Operations pages. The clock itself stays in pages.js. Colors match that paper page. */
 import { TOOL_CATALOG } from "./create-server.js";
-import { AUTHOR, LITERATURE } from "./meta.js";
+import { AUTHOR, HOME, LITERATURE } from "./meta.js";
 import { clockFace, zoneChoices } from "./prefs.js";
 import { VERSION } from "./version.js";
 
@@ -47,7 +47,9 @@ body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.45 P
 .header-clock { font-size: 0.92rem; white-space: nowrap; }
 .header-zone { color: var(--muted); margin-left: 8px; }
 .nav-tabs { max-width: 1100px; margin: 0 auto; padding: 0 12px; display: flex; gap: 0; overflow-x: auto; }
-.nav-tab { display: inline-flex; align-items: center; padding: 8px 12px; color: var(--accent); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.nav-tab { display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px; color: var(--accent); text-decoration: none; font-size: 0.95rem; border-bottom: 2px solid transparent; margin-bottom: -1px; white-space: nowrap; }
+.nav-tab .lock { font-size: 0.72rem; line-height: 1; }
+a.btn { display: inline-block; background: var(--ink); color: var(--paper); text-decoration: none; border-radius: 4px; padding: 6px 12px; }
 .nav-tab:hover { color: var(--ink); }
 .nav-tab.active { color: var(--ink); border-bottom-color: var(--accent); }
 .burger { display: none; background: transparent; color: var(--ink); border: 1px solid var(--line); width: 44px; height: 44px; padding: 11px 10px; flex-direction: column; justify-content: center; gap: 5px; }
@@ -229,14 +231,17 @@ function layoutTables() {
     table.classList.toggle('stack', narrow);
   });
 }
-window.addEventListener('DOMContentLoaded', function () {
+function openHashedPane() {
   var hash = location.hash.slice(1);
-  if (hash) {
-    var tab = document.querySelector('[data-target="' + hash + '"]');
-    if (tab && tab.dataset.group) showPane(tab.dataset.group, hash);
-  }
+  if (!hash) return;
+  var tab = document.querySelector('[data-target="' + hash + '"]');
+  if (tab && tab.dataset.group) showPane(tab.dataset.group, hash);
+}
+window.addEventListener('DOMContentLoaded', function () {
+  openHashedPane();
   layoutTables();
 });
+window.addEventListener('hashchange', openHashedPane);
 window.addEventListener('resize', function () {
   layoutTables();
   if (window.innerWidth > 640) closeMenu();
@@ -287,6 +292,7 @@ function asClock(timeZone, hourClock) {
 export function pageShell({ title, tab, body, timeZone = "device", hourClock = "24" }) {
   const clock = asClock(timeZone, hourClock);
   const face = clockFace(clock.timeZone, new Date(), clock.hourClock);
+  const locked = new Set(["/admin", "/log"]);
   const tabs = [
     ["/", "Clock"],
     ["/health", "Health"],
@@ -295,7 +301,10 @@ export function pageShell({ title, tab, body, timeZone = "device", hourClock = "
     ["/admin", "Settings"],
     ["/log", "Log"],
     ["/help", "Docs"],
-  ].map(([href, label]) => `<a class="nav-tab${tab === href ? " active" : ""}" href="${href}">${label}</a>`).join("");
+  ].map(([href, label]) => {
+    const mark = locked.has(href) ? `<span class="lock" title="Sign-in required" aria-label="Sign-in required">🔒</span>` : "";
+    return `<a class="nav-tab${tab === href ? " active" : ""}" href="${href}">${mark}${label}</a>`;
+  }).join("");
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -316,6 +325,7 @@ export function pageShell({ title, tab, body, timeZone = "device", hourClock = "
   <main class="main">${body}
     <div class="footer-links">
       <span>${esc(AUTHOR.name)}</span>
+      <a href="${esc(HOME)}" target="_blank" rel="noopener">Home</a>
       <a href="${esc(AUTHOR.url)}" target="_blank" rel="noopener">Website</a>
       <a href="${esc(AUTHOR.github)}" target="_blank" rel="noopener">GitHub</a>
     </div>
@@ -689,7 +699,8 @@ export function logPage(snap, timeZone = "device") {
         ["trace", trace.length, trace.length ? "" : "warn"],
         ["audit", audit.length],
       ])}
-      <p class="muted">Refresh to update. The trace fills only while call trace is on.</p>
+      <p class="muted">Refresh to update. The trace fills only while call trace is on. Export downloads the counters, errors, trace, audit trail, and each call’s caller (user, API key, or anonymous).</p>
+      <p><a class="btn" href="/admin/export/log">Export log and trace</a></p>
       ${pageTabs("log", [["log-counters", "Counters"], ["log-errors", `Errors (${errors.length})`], ["log-trace", `Trace (${trace.length})`], ["log-audit", "Audit"]])}
       <div id="log-counters" class="pane active" data-group="log">
         ${searchRow("cntSearch", "cntTable", "Filter tools")}
@@ -733,8 +744,11 @@ export function helpPage(host, timeZone = "device") {
             <tr><td class="mono">Protocols</td><td>stdio, Streamable HTTP (<code>/mcp</code>), and legacy SSE (<code>/sse</code>). Each one can be turned off under Settings. One must stay on.</td></tr>
             <tr><td class="mono">Push</td><td>Optional. Settings → Push sends the current quote every 5, 10, 15, 30, or 60 minutes. Destinations are <code>GET /events</code>, open SSE sessions, open Streamable HTTP sessions, and an MQTT broker. Off until you choose an interval and a destination.</td></tr>
             <tr><td class="mono">Pages</td><td>Health, Test (smoke, and traffic after you sign in or send an API key), Tools, Settings, Log, and these docs. Settings can hide every page until sign-in.</td></tr>
-            <tr><td class="mono">Access</td><td>Auth off, write, or all. Rate limit, per-tool enable, API keys, and users. Log shows counters, errors, the call trace, and the audit trail.</td></tr>
-            <tr><td class="mono">Run</td><td><code>cd mcp</code> then <code>npm run http</code>. Desk at <code>${esc(base)}</code>.</td></tr>
+            <tr><td class="mono">Access</td><td>Auth off, write, or all. Rate limit, per-tool enable and lock, API keys, and users. Log shows counters, errors, the call trace, and the audit trail. Settings and Log need a sign-in.</td></tr>
+            <tr><td class="mono">ADMIN_PASSWORD</td><td>Environment variable for the Settings sign-in. On this laptop the default is <code>demo</code> / <code>demo</code> unless you set <code>ADMIN_USER</code> and <code>ADMIN_PASSWORD</code>. On a public bind (<code>HOST=0.0.0.0</code>, Render, or a container) the laptop password is off until <code>ADMIN_PASSWORD</code> is set. Restart after you change it. It is not saved in Settings.</td></tr>
+            <tr><td class="mono">Backup</td><td>Settings → Backup downloads a JSON file of the clock, auth, protocols, schedule, tool gates, and saved users (password hashes only). Import restores that file. API keys, <code>ADMIN_PASSWORD</code>, and the MQTT password are not in the file. Log → Export log and trace downloads the counters, errors, trace, and audit trail.</td></tr>
+            <tr><td class="mono">Home</td><td><a href="${esc(HOME)}">${esc(HOME)}</a></td></tr>
+            <tr><td class="mono">Run</td><td><code>npm run http</code> from this package. Desk at <code>${esc(base)}</code>.</td></tr>
           </tbody>
         </table></div>
       </div>
@@ -742,7 +756,8 @@ export function helpPage(host, timeZone = "device") {
         <div class="tbl-wrap"><table><thead><tr><th>Name</th><th>What it is</th></tr></thead>
           <tbody>
             <tr><td class="mono">Server</td><td><a href="${esc(AUTHOR.url)}">${esc(AUTHOR.name)}</a>. <a href="${esc(AUTHOR.github)}">github.com/markusvankempen</a>. ${esc(AUTHOR.tagline)}</td></tr>
-            <tr><td class="mono">Registry</td><td>The MCP registry <code>server.json</code> has no author field. This server puts the site in <code>websiteUrl</code>, the git repo in <code>repository</code> (subfolder <code>mcp</code>), and the person in <code>_meta["io.modelcontextprotocol.registry/publisher-provided"].author</code>. <code>describe_server</code> returns the same name, site, and GitHub.</td></tr>
+            <tr><td class="mono">Home</td><td><a href="${esc(HOME)}">${esc(HOME)}</a>. <code>server.json</code> <code>websiteUrl</code> and <code>describe_server</code> <code>server.homepage</code> use this address.</td></tr>
+            <tr><td class="mono">Registry</td><td>The MCP registry <code>server.json</code> has no author field. This server puts the project home in <code>websiteUrl</code>, the git repo in <code>repository</code>, and the person in <code>_meta["io.modelcontextprotocol.registry/publisher-provided"].author</code>.</td></tr>
             <tr><td class="mono">Literature</td><td><a href="${esc(LITERATURE.url)}">${esc(LITERATURE.work)}</a> by ${esc(LITERATURE.author)}. License <a href="${esc(LITERATURE.licenseUrl)}">${esc(LITERATURE.license)}</a>. The clock uses exact-minute copyright-free lines first, then that public collection.</td></tr>
             <tr><td class="mono">Books</td><td>Copyright-free lines bundled with the server. Their authors died in 1971 or earlier. The other sources are original voices written for this clock, not quotations from films or living authors.</td></tr>
           </tbody>
@@ -755,8 +770,8 @@ export function helpPage(host, timeZone = "device") {
             <tr><td class="mono">/health</td><td>Process is up. Not a tool test.</td></tr>
             <tr><td class="mono">/test</td><td>Smoke checklist, generated traffic, and curl commands.</td></tr>
             <tr><td class="mono">/tools</td><td>Run a tool. <code>list_schemas</code> and <code>get_schema</code> return the JSON Schema.</td></tr>
-            <tr><td class="mono">/admin</td><td>Clock defaults, auth, protocols, quote schedule, MQTT, hide-pages-until-sign-in, rate limit, gates, keys.</td></tr>
-            <tr><td class="mono">/log</td><td>Counters, errors, call trace, audit.</td></tr>
+            <tr><td class="mono">/admin</td><td>Sign-in required. Clock defaults, auth, protocols, quote schedule, MQTT, hide-pages-until-sign-in, rate limit, gates, locks, keys, users, and settings export or import. Public binds need <code>ADMIN_PASSWORD</code>.</td></tr>
+            <tr><td class="mono">/log</td><td>Sign-in required. Counters, errors, call trace, audit, and export.</td></tr>
             <tr><td class="mono">/events</td><td>Plain SSE for a custom client. Event name <code>quote</code>. Follows the same sign-in rule as <code>get_quote</code>.</td></tr>
             <tr><td class="mono">/mcp</td><td>Streamable HTTP. A scheduled quote arrives as <code>notifications/literature-clock/quote</code> when that destination is on.</td></tr>
             <tr><td class="mono">/sse</td><td>Legacy SSE. The same notification, on the open session, when that destination is on.</td></tr>
@@ -784,7 +799,7 @@ export function loginPage({ error = "", disabled = false, next = "", timeZone = 
     timeZone,
     body: `
       <h2>Sign in.</h2>
-      <p class="muted">${disabled ? "This bind is public. Set ADMIN_PASSWORD before signing in." : "On this laptop the first sign-in is demo / demo. More names are under Settings → Users."}</p>
+      <p class="muted">${disabled ? "This bind is public. Set ADMIN_PASSWORD in the environment, then restart, before signing in. ADMIN_USER changes the name (default demo)." : "On this laptop the first sign-in is demo / demo, unless ADMIN_USER and ADMIN_PASSWORD are set. On a public address the laptop password is off until ADMIN_PASSWORD is set. More names are under Settings → Users."}</p>
       ${error ? `<p class="warn">${esc(error)}</p>` : ""}
       <form method="post" action="/admin/login" style="max-width:340px">
         <p class="field">Username<input name="username" autocomplete="username" required></p>
@@ -805,11 +820,18 @@ export function adminPage({ security, settings, sources, issuedKey = "", notice 
     return `<label class="mode${security.authMode === mode ? " on" : ""}"><input type="radio" name="authMode" value="${esc(mode)}"${security.authMode === mode ? " checked" : ""} style="width:auto;margin-top:3px"><span><b>${esc(title)}</b><span><code>${esc(mode)}</code> — ${esc(detail)}</span></span></label>`;
   }).join("");
   const gates = security.toolGates || {};
+  const locks = security.toolAuthOverrides || {};
   const gateRows = Object.entries(gates).map(([name, enabled]) => {
     const gate = enabled
       ? `<form method="post" action="/admin/tool-gate" style="display:inline"><input type="hidden" name="tool" value="${esc(name)}"><input type="hidden" name="enabled" value="0"><button class="secondary" type="submit">Disable</button></form>`
       : `<form method="post" action="/admin/tool-gate" style="display:inline"><input type="hidden" name="tool" value="${esc(name)}"><input type="hidden" name="enabled" value="1"><button type="submit">Enable</button></form>`;
-    return `<tr><td class="mono">${esc(name)}</td><td>${enabled ? '<span class="tag">enabled</span>' : '<span class="tag coral">disabled</span>'} ${gate}</td><td>${tryButton(name)}</td></tr>`;
+    const locked = locks[name] === true;
+    const lock = name === "describe_server"
+      ? `<span class="muted">stays open</span>`
+      : locked
+        ? `<span class="tag coral">🔒 auth required</span> <form method="post" action="/admin/tool-auth" style="display:inline"><input type="hidden" name="tool" value="${esc(name)}"><input type="hidden" name="requireAuth" value="0"><button class="secondary" type="submit">Remove lock</button></form>`
+        : `<span class="tag grey">follows mode</span> <form method="post" action="/admin/tool-auth" style="display:inline"><input type="hidden" name="tool" value="${esc(name)}"><input type="hidden" name="requireAuth" value="1"><button type="submit">🔒 Lock</button></form>`;
+    return `<tr><td class="mono">${esc(name)}</td><td>${enabled ? '<span class="tag">enabled</span>' : '<span class="tag coral">disabled</span>'} ${gate}</td><td>${lock}</td><td>${tryButton(name)}</td></tr>`;
   }).join("");
   const keyRows = (security.apiKeys || []).map((key) => `<tr>
     <td>${esc(key.label)}</td><td class="mono">${esc(key.prefix)}</td><td>${(key.scopes || []).map((scope) => `<span class="tag grey">${esc(scope)}</span>`).join(" ")}</td>
@@ -852,7 +874,7 @@ export function adminPage({ security, settings, sources, issuedKey = "", notice 
       </div>
       ${notice ? `<p class="panel">${esc(notice)}</p>` : ""}
       ${issuedKey ? `<div class="secret"><strong>Copy this key now. It is not shown again.</strong><br><code>${esc(issuedKey)}</code><br>HTTP: Authorization: Bearer … · stdio: MCP_API_KEY</div>` : ""}
-      ${pageTabs("set", [["set-clock", "Clock"], ["set-security", "Security"], ["set-protocols", "Protocols"], ["set-push", "Push"], ["set-gates", "Tool gates"], ["set-keys", "API keys"], ["set-users", "Users"]])}
+      ${pageTabs("set", [["set-clock", "Clock"], ["set-security", "Security"], ["set-protocols", "Protocols"], ["set-push", "Push"], ["set-gates", "Tool gates"], ["set-keys", "API keys"], ["set-users", "Users"], ["set-backup", "Backup"]])}
       <div id="set-clock" class="pane active" data-group="set">
         <form class="panel" method="post" action="/admin/settings">
           <h4>Defaults</h4>
@@ -867,6 +889,11 @@ export function adminPage({ security, settings, sources, issuedKey = "", notice 
         </form>
       </div>
       <div id="set-security" class="pane" data-group="set">
+        <div class="panel">
+          <h4>Admin password</h4>
+          <p>The Settings and Log tabs need this sign-in. On this laptop the name and password are <code>demo</code> / <code>demo</code> unless the environment sets <code>ADMIN_USER</code> and <code>ADMIN_PASSWORD</code>.</p>
+          <p>On a public bind — <code>HOST=0.0.0.0</code>, Render, or a container — the laptop password is turned off. Set <code>ADMIN_PASSWORD</code> before the process starts, then restart. The value is not stored in Settings and is not included in an export.</p>
+        </div>
         <form class="panel" method="post" action="/admin/security">
           <h4>Auth mode</h4>
           <div class="modes">${modes}</div>
@@ -935,8 +962,8 @@ export function adminPage({ security, settings, sources, issuedKey = "", notice 
         </div>
       </div>
       <div id="set-gates" class="pane" data-group="set">
-        <p class="muted">Disable hides a tool. describe_server stays available.</p>
-        <div class="tbl-wrap"><table><thead><tr><th>Tool</th><th>Availability</th><th></th></tr></thead><tbody>${gateRows}</tbody></table></div>
+        <p class="muted">Disable hides a tool. Lock forces a credential even when auth mode is off. describe_server stays available and stays open.</p>
+        <div class="tbl-wrap"><table><thead><tr><th>Tool</th><th>Availability</th><th>Auth</th><th></th></tr></thead><tbody>${gateRows}</tbody></table></div>
       </div>
       <div id="set-keys" class="pane" data-group="set">
         <form class="panel" method="post" action="/admin/keys">
@@ -963,6 +990,32 @@ export function adminPage({ security, settings, sources, issuedKey = "", notice 
           <p><button type="submit">Save user</button></p>
         </form>
         <div class="tbl-wrap"><table><thead><tr><th>User</th><th>Scopes</th><th></th><th></th></tr></thead><tbody>${userRows}</tbody></table></div>
+      </div>
+      <div id="set-backup" class="pane" data-group="set">
+        <div class="panel">
+          <h4>Export settings</h4>
+          <p>Downloads the clock, auth mode, rate limit, protocols, page lock, quote schedule, MQTT broker fields, tool gates, and saved users. Passwords in that file are hashes. API keys, <code>ADMIN_PASSWORD</code>, and the MQTT password are left out. The MQTT password already saved here stays in place on import.</p>
+          <p><a class="btn" href="/admin/export/settings">Export settings</a></p>
+        </div>
+        <form class="panel" method="post" action="/admin/import">
+          <h4>Import settings</h4>
+          <p>Replaces the saved settings with a file from Export. Saved users in the file replace the saved users on this machine. The built-in admin is unchanged.</p>
+          <label class="field">Settings file<input type="file" accept="application/json,.json" onchange="readSettingsFile(this)"></label>
+          <label class="field">Or paste the JSON<textarea id="settings-import" name="document" rows="8" required placeholder='{"kind":"literature-clock-settings","version":1}'></textarea></label>
+          <button type="submit">Import settings</button>
+        </form>
+        <script>
+          function readSettingsFile(input) {
+            var file = input.files && input.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function () {
+              var box = document.getElementById("settings-import");
+              if (box) box.value = String(reader.result || "");
+            };
+            reader.readAsText(file);
+          }
+        </script>
       </div>
       ${toolTryModal()}
     `,
