@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VS Code · Literature Clock</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg">
+  <link rel="stylesheet" href="client.css">
+</head>
+<body>
+  <header>
+    <img src="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg" alt="">
+    <div>
+      <h1>VS Code</h1>
+      <p>Workspace <code>.vscode/mcp.json</code>, or Command Palette → <strong>MCP: Open User Configuration</strong>.</p>
+    </div>
+  </header>
+  <nav>
+    <a href="index.html">Clients</a>
+    <a href="cursor.html">Cursor</a>
+    <a href="vscode.html" aria-current="page">VS Code</a>
+    <a href="claude.html">Claude</a>
+    <a href="browser.html">Browser</a>
+  </nav>
+  <main>
+    <h2>Hosted server</h2>
+    <p>Command Palette → <strong>MCP: List Servers</strong> → start <strong>literature-clock-mcp</strong>. In Copilot Chat, confirm the server is selected in the tools list, then ask for the current quote.</p>
+    <div class="codehead">
+      <p class="muted">HTTP</p>
+      <button type="button" class="quiet" data-copy="hosted">Copy</button>
+    </div>
+    <pre id="hosted">{
+  "servers": {
+    "literature-clock-mcp": {
+      "type": "http",
+      "url": "https://literature-clock-mcp.onrender.com/mcp"
+    }
+  }
+}</pre>
+
+    <h2>Local npx</h2>
+    <div class="codehead">
+      <p class="muted">stdio</p>
+      <button type="button" class="quiet" data-copy="local">Copy</button>
+    </div>
+    <pre id="local">{
+  "servers": {
+    "literature-clock-mcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "literature-clock-mcp"]
+    }
+  }
+}</pre>
+
+    <h2>When a key is required</h2>
+    <p>Leave this out while auth is <code>off</code>. Add it when auth mode is <code>write</code> or <code>all</code>.</p>
+    <pre>{
+  "servers": {
+    "literature-clock-mcp": {
+      "type": "http",
+      "url": "https://literature-clock-mcp.onrender.com/mcp",
+      "headers": {
+        "Authorization": "Bearer &lt;key&gt;"
+      }
+    }
+  }
+}</pre>
+  </main>
+  <footer>
+    <a href="https://github.com/markusvankempen/literature-clock-mcp">literature-clock-mcp</a>
+    · <a href="index.html">All clients</a>
+  </footer>
+  <script>
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const text = document.getElementById(button.dataset.copy).textContent;
+        await navigator.clipboard.writeText(text);
+        button.textContent = "Copied";
+      });
+    });
+  </script>
+</body>
+</html>

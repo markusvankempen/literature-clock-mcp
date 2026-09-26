@@ -56,6 +56,10 @@
   <code>claude</code>
 </p>
 
+## Client pages
+
+[clients/](clients/index.html) is a set of HTML pages for Cursor, VS Code, Claude Desktop, and a browser that calls `get_quote`. Open `clients/index.html`, or serve the folder on localhost so the browser page can reach the server.
+
 ## Add the server
 
 **Cursor** — `~/.cursor/mcp.json`
@@ -104,7 +108,7 @@ Install with `npx literature-clock-mcp`. That process is stdio. `MCP_MODE=http n
 
 The same configs work for [Render](https://literature-clock-mcp.onrender.com/), IBM Code Engine, or any host that serves this app over HTTPS. The MCP URL is the site plus `/mcp`. The live Render server is `https://literature-clock-mcp.onrender.com/mcp`. A Code Engine app looks like `https://<app>.<region>.codeengine.appdomain.cloud/mcp`.
 
-The host must run `MCP_MODE=http HOST=0.0.0.0 node src/index.js` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
+The host must run `MCP_MODE=http HOST=0.0.0.0 npx literature-clock-mcp@1.6.2` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
 
 When auth mode is `write` or `all`, add a header `Authorization: Bearer <key>`. Auth is `off` on a fresh server, so the blocks below need no key.
 

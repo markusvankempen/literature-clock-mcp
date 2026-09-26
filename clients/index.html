@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Literature Clock clients</title>
+  <meta name="description" content="HTML pages that show how to connect Cursor, VS Code, Claude Desktop, and a browser to literature-clock-mcp.">
+  <link rel="icon" href="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg">
+  <link rel="stylesheet" href="client.css">
+</head>
+<body>
+  <header>
+    <img src="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg" alt="">
+    <div>
+      <h1>Connect a client</h1>
+      <p>Literature Clock MCP · <code>literature-clock-mcp</code></p>
+    </div>
+  </header>
+  <nav>
+    <a href="index.html" aria-current="page">Clients</a>
+    <a href="cursor.html">Cursor</a>
+    <a href="vscode.html">VS Code</a>
+    <a href="claude.html">Claude</a>
+    <a href="browser.html">Browser</a>
+  </nav>
+  <main>
+    <p class="lead">These pages are the copy you paste into an editor, and a browser that calls <code>get_quote</code> over Streamable HTTP.</p>
+    <p class="muted">The server is the npm package <a href="https://www.npmjs.com/package/literature-clock-mcp">literature-clock-mcp</a>. A hosted clock is at <a href="https://literature-clock-mcp.onrender.com/">literature-clock-mcp.onrender.com</a>. Its MCP URL is <code>https://literature-clock-mcp.onrender.com/mcp</code>.</p>
+
+    <a class="card" href="cursor.html">
+      <strong>Cursor</strong>
+      <span><code>~/.cursor/mcp.json</code> or <code>.cursor/mcp.json</code>. stdio through npx, or a hosted URL.</span>
+    </a>
+    <a class="card" href="vscode.html">
+      <strong>VS Code</strong>
+      <span>User or workspace <code>mcp.json</code>, with <code>type</code> set to <code>stdio</code> or <code>http</code>.</span>
+    </a>
+    <a class="card" href="claude.html">
+      <strong>Claude Desktop</strong>
+      <span>A local <code>npx</code> process, or <code>mcp-remote</code> when the clock is hosted.</span>
+    </a>
+    <a class="card" href="browser.html">
+      <strong>Browser</strong>
+      <span>A page that posts <code>tools/call</code> for <code>get_quote</code> and shows the line.</span>
+    </a>
+
+    <h2>Open these pages</h2>
+    <p>Open <code>index.html</code> in a browser. The browser client calls another origin, so serve this folder on localhost. The server allows a loopback page. A page hosted elsewhere is refused until <code>CORS_ORIGINS</code> lists that origin.</p>
+    <pre>cd clients
+python3 -m http.server 8765</pre>
+    <p>Then open <a href="http://127.0.0.1:8765/">http://127.0.0.1:8765/</a>. Point the browser page at <code>http://127.0.0.1:8080/mcp</code> after <code>MCP_MODE=http npx literature-clock-mcp</code>, or at the Render URL above.</p>
+    <p class="muted">IBM Code Engine uses the same JSON as Cursor and VS Code. Replace the URL with <code>https://&lt;app&gt;.&lt;region&gt;.codeengine.appdomain.cloud/mcp</code>.</p>
+  </main>
+  <footer>
+    <a href="https://github.com/markusvankempen/literature-clock-mcp">literature-clock-mcp</a>
+    · <a href="https://markusvankempen.github.io/">Markus van Kempen</a>
+  </footer>
+</body>
+</html>

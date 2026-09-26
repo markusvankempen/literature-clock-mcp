@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Desktop · Literature Clock</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg">
+  <link rel="stylesheet" href="client.css">
+</head>
+<body>
+  <header>
+    <img src="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg" alt="">
+    <div>
+      <h1>Claude Desktop</h1>
+      <p>macOS: <code>~/Library/Application Support/Claude/claude_desktop_config.json</code><br>
+      Windows: <code>%APPDATA%\Claude\claude_desktop_config.json</code></p>
+    </div>
+  </header>
+  <nav>
+    <a href="index.html">Clients</a>
+    <a href="cursor.html">Cursor</a>
+    <a href="vscode.html">VS Code</a>
+    <a href="claude.html" aria-current="page">Claude</a>
+    <a href="browser.html">Browser</a>
+  </nav>
+  <main>
+    <p>Quit Claude and open it again after you save. The desktop file starts a local process. It does not take a URL on its own.</p>
+
+    <h2>Local npx</h2>
+    <div class="codehead">
+      <p class="muted">stdio</p>
+      <button type="button" class="quiet" data-copy="local">Copy</button>
+    </div>
+    <pre id="local">{
+  "mcpServers": {
+    "literature-clock-mcp": {
+      "command": "npx",
+      "args": ["-y", "literature-clock-mcp"]
+    }
+  }
+}</pre>
+
+    <h2>Hosted server</h2>
+    <p><code>mcp-remote</code> opens the hosted URL from that local process.</p>
+    <div class="codehead">
+      <p class="muted">mcp-remote</p>
+      <button type="button" class="quiet" data-copy="hosted">Copy</button>
+    </div>
+    <pre id="hosted">{
+  "mcpServers": {
+    "literature-clock-mcp": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "https://literature-clock-mcp.onrender.com/mcp"]
+    }
+  }
+}</pre>
+    <p class="muted">When auth mode is <code>write</code> or <code>all</code>, pass the key the way <code>mcp-remote</code> documents an <code>Authorization</code> header. Auth is off on a fresh server, so the block above needs no key.</p>
+  </main>
+  <footer>
+    <a href="https://github.com/markusvankempen/literature-clock-mcp">literature-clock-mcp</a>
+    · <a href="index.html">All clients</a>
+  </footer>
+  <script>
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const text = document.getElementById(button.dataset.copy).textContent;
+        await navigator.clipboard.writeText(text);
+        button.textContent = "Copied";
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cursor · Literature Clock</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg">
+  <link rel="stylesheet" href="client.css">
+</head>
+<body>
+  <header>
+    <img src="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg" alt="">
+    <div>
+      <h1>Cursor</h1>
+      <p>Project file <code>.cursor/mcp.json</code>, or <code>~/.cursor/mcp.json</code> for every project.</p>
+    </div>
+  </header>
+  <nav>
+    <a href="index.html">Clients</a>
+    <a href="cursor.html" aria-current="page">Cursor</a>
+    <a href="vscode.html">VS Code</a>
+    <a href="claude.html">Claude</a>
+    <a href="browser.html">Browser</a>
+  </nav>
+  <main>
+    <h2>Hosted server</h2>
+    <p>Save the file. Open <strong>Cursor Settings → MCP</strong> and turn <strong>literature-clock-mcp</strong> on. A green dot means the handshake worked. In Agent chat, ask: <code>ask literature-clock-mcp for the current quote</code>.</p>
+    <div class="codehead">
+      <p class="muted">Streamable HTTP</p>
+      <button type="button" class="quiet" data-copy="hosted">Copy</button>
+    </div>
+    <pre id="hosted">{
+  "mcpServers": {
+    "literature-clock-mcp": {
+      "url": "https://literature-clock-mcp.onrender.com/mcp"
+    }
+  }
+}</pre>
+
+    <h2>Local npx</h2>
+    <p>Cursor starts the process. stdio is the default. Node.js 20 or newer is required.</p>
+    <div class="codehead">
+      <p class="muted">stdio</p>
+      <button type="button" class="quiet" data-copy="local">Copy</button>
+    </div>
+    <pre id="local">{
+  "mcpServers": {
+    "literature-clock-mcp": {
+      "command": "npx",
+      "args": ["-y", "literature-clock-mcp"]
+    }
+  }
+}</pre>
+
+    <h2>When a key is required</h2>
+    <p>Auth is off on a fresh server. When auth mode is <code>write</code> or <code>all</code>, add the header on the hosted entry.</p>
+    <pre>{
+  "mcpServers": {
+    "literature-clock-mcp": {
+      "url": "https://literature-clock-mcp.onrender.com/mcp",
+      "headers": {
+        "Authorization": "Bearer &lt;key&gt;"
+      }
+    }
+  }
+}</pre>
+    <p class="muted">The clock on Render is UTC. “Now” on that host is the container’s minute, not the minute on your laptop. The first call after a free instance has been idle can take a moment.</p>
+  </main>
+  <footer>
+    <a href="https://github.com/markusvankempen/literature-clock-mcp">literature-clock-mcp</a>
+    · <a href="index.html">All clients</a>
+  </footer>
+  <script>
+    document.querySelectorAll("[data-copy]").forEach((button) => {
+      button.addEventListener("click", async () => {
+        const text = document.getElementById(button.dataset.copy).textContent;
+        await navigator.clipboard.writeText(text);
+        button.textContent = "Copied";
+      });
+    });
+  </script>
+</body>
+</html>

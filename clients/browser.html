@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Browser client · Literature Clock</title>
+  <link rel="icon" href="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg">
+  <link rel="stylesheet" href="client.css">
+</head>
+<body>
+  <header>
+    <img src="https://raw.githubusercontent.com/markusvankempen/literature-clock-mcp/main/docs/icon.svg" alt="">
+    <div>
+      <h1>Browser</h1>
+      <p>Posts <code>tools/call</code> for <code>get_quote</code> to Streamable HTTP.</p>
+    </div>
+  </header>
+  <nav>
+    <a href="index.html">Clients</a>
+    <a href="cursor.html">Cursor</a>
+    <a href="vscode.html">VS Code</a>
+    <a href="claude.html">Claude</a>
+    <a href="browser.html" aria-current="page">Browser</a>
+  </nav>
+  <main>
+    <p>Serve this folder from localhost, then open this page. A loopback origin may call the server. A page on another site is refused until that server’s <code>CORS_ORIGINS</code> includes the page’s origin. Opening the file directly sends no usable origin.</p>
+    <pre>cd clients
+python3 -m http.server 8765</pre>
+
+    <form id="ask">
+      <label for="url">MCP URL</label>
+      <input id="url" name="url" value="https://literature-clock-mcp.onrender.com/mcp" autocomplete="off" spellcheck="false">
+      <div class="row">
+        <div>
+          <label for="time">Time</label>
+          <input id="time" name="time" value="now" autocomplete="off">
+        </div>
+        <div>
+          <label for="source">Source</label>
+          <select id="source" name="source">
+            <option value="">Saved default</option>
+            <option value="literature">literature</option>
+            <option value="books">books</option>
+            <option value="mix">mix</option>
+          </select>
+        </div>
+      </div>
+      <label for="key">Bearer key <span class="muted">leave empty while auth is off</span></label>
+      <input id="key" name="key" type="password" autocomplete="off">
+      <p><button type="submit">Ask for the line</button></p>
+    </form>
+
+    <h2>Line</h2>
+    <div class="result" id="line" aria-live="polite">
+      <p class="muted">The answer appears here.</p>
+    </div>
+
+    <h2>Request</h2>
+    <pre id="sent"></pre>
+    <h2>Response</h2>
+    <pre id="raw">Waiting.</pre>
+  </main>
+  <footer>
+    <a href="https://github.com/markusvankempen/literature-clock-mcp">literature-clock-mcp</a>
+    · <a href="index.html">All clients</a>
+  </footer>
+  <script>
+    const form = document.getElementById("ask");
+    const sent = document.getElementById("sent");
+    const raw = document.getElementById("raw");
+    const line = document.getElementById("line");
+
+    function payloadOf(message) {
+      const structured = message?.result?.structuredContent;
+      if (structured && Array.isArray(structured.lines)) return structured;
+      const text = (message?.result?.content || []).find((part) => part.type === "text")?.text;
+      if (!text) return structured || null;
+      try { return JSON.parse(text); } catch { return { text }; }
+    }
+
+    function showLine(message) {
+      const payload = payloadOf(message);
+      const item = payload?.lines?.[0];
+      if (!item) {
+        const error = message?.error?.message || message?.error || "No line in the response.";
+        line.innerHTML = "<p></p>";
+        line.querySelector("p").textContent = String(error);
+        return;
+      }
+      line.replaceChildren();
+      const quote = document.createElement("p");
+      quote.className = "line";
+      quote.textContent = item.text;
+      const cite = document.createElement("p");
+      cite.className = "muted";
+      cite.textContent = [item.citation, item.source_label, payload.time].filter(Boolean).join(" · ");
+      line.append(quote, cite);
+    }
+
+    async function readBody(response) {
+      const text = await response.text();
+      const type = response.headers.get("content-type") || "";
+      if (type.includes("text/event-stream") || text.trimStart().startsWith("data:")) {
+        const messages = text.split("\n")
+          .filter((row) => row.startsWith("data:"))
+          .map((row) => JSON.parse(row.slice(5).trim()));
+        return messages.at(-1) || { raw: text };
+      }
+      try { return JSON.parse(text); } catch { return { raw: text, status: response.status }; }
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const arguments_ = { time: document.getElementById("time").value.trim() || "now" };
+      const source = document.getElementById("source").value;
+      if (source) arguments_.source = source;
+      const body = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: { name: "get_quote", arguments: arguments_ }
+      };
+      const headers = {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream"
+      };
+      const key = document.getElementById("key").value.trim();
+      if (key) headers.Authorization = "Bearer " + key;
+      sent.textContent = JSON.stringify({ url: document.getElementById("url").value.trim(), headers, body }, null, 2);
+      line.innerHTML = "<p class=\"muted\">Asking…</p>";
+      raw.textContent = "Waiting.";
+      try {
+        const response = await fetch(document.getElementById("url").value.trim(), {
+          method: "POST",
+          headers,
+          body: JSON.stringify(body)
+        });
+        const message = await readBody(response);
+        raw.textContent = JSON.stringify(message, null, 2);
+        if (!response.ok && !message?.result) {
+          line.innerHTML = "<p></p>";
+          line.querySelector("p").textContent = "HTTP " + response.status;
+          return;
+        }
+        showLine(message);
+      } catch (error) {
+        line.innerHTML = "<p></p>";
+        line.querySelector("p").textContent = error.message + " Serve this page from localhost, or set CORS_ORIGINS on the server.";
+        raw.textContent = String(error);
+      }
+    });
+  </script>
+</body>
+</html>
