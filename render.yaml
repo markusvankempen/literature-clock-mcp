@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install
-    startCommand: MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.4
+    startCommand: MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.5
     healthCheckPath: /health
     envVars:
       - key: MCP_MODE

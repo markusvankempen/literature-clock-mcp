@@ -21,7 +21,7 @@
 </p>
 
 <p align="center">
-  <a href="package.json"><img alt="version 1.6.4" src="https://img.shields.io/badge/version-1.6.4-2ea44f"></a>
+  <a href="package.json"><img alt="version 1.6.5" src="https://img.shields.io/badge/version-1.6.5-2ea44f"></a>
   <a href="LICENSE"><img alt="Apache-2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue"></a>
   <a href="package.json"><img alt="Node.js 20 or newer" src="https://img.shields.io/badge/node-%3E%3D20-339933?logo=nodedotjs&logoColor=white"></a>
   <a href="https://modelcontextprotocol.io"><img alt="MCP stdio and HTTP" src="https://img.shields.io/badge/MCP-stdio%20%7C%20HTTP-111111"></a>
@@ -104,7 +104,7 @@ This repository is the project home. It does not contain the server source. Inst
 
 The same configs work for [Render](https://literature-clock-mcp.onrender.com/), IBM Code Engine, or any host that serves this app over HTTPS. The MCP URL is the site plus `/mcp`. The live Render server is `https://literature-clock-mcp.onrender.com/mcp`. A Code Engine app looks like `https://<app>.<region>.codeengine.appdomain.cloud/mcp`.
 
-The host must run `MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.4` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
+The host must run `MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.5` and leave `PORT` for the platform. Deploy steps for Render are under [Render](#render).
 
 When auth mode is `write` or `all`, add a header `Authorization: Bearer <key>`. Auth is `off` on a fresh server, so the blocks below need no key.
 
@@ -163,7 +163,7 @@ No account and no analytics. Books and voices stay on the machine. Literature tr
 | **npm** | [literature-clock-mcp](https://www.npmjs.com/package/literature-clock-mcp) |
 | **MCP name** | `io.github.markusvankempen/literature-clock-mcp` |
 | **Name** | Literature Clock · package `literature-clock-mcp` |
-| **Version** | 1.6.4 on npm. This git tree does not contain `src/`. |
+| **Version** | 1.6.5 on npm. This git tree does not contain `src/`. |
 | **Transports** | stdio, Streamable HTTP (`/mcp`), legacy SSE (`/sse`). Each can be turned off in Settings. One stays on. |
 | **Source** | [literature-clock-mcp](https://github.com/markusvankempen/literature-clock-mcp) · Chrome twin [chrome-ext-ink-clock](https://github.com/markusvankempen/chrome-ext-ink-clock) |
 
@@ -319,7 +319,7 @@ MCP_MODE=http npx literature-clock-mcp   # http://127.0.0.1:8080/health
 
 The same settings are `get_settings` / `update_settings`, and `GET` or `POST /api/settings`.
 
-The browser UI is HTTP only. stdio does not open a page. `MCP_MODE=http npx literature-clock-mcp@1.6.4` serves the clock. The local desk port in development is [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
+The browser UI is HTTP only. stdio does not open a page. `MCP_MODE=http npx literature-clock-mcp@1.6.5` serves the clock. The local desk port in development is [http://127.0.0.1:8788/](http://127.0.0.1:8788/).
 
 ## Render
 
@@ -328,7 +328,7 @@ The browser UI is HTTP only. stdio does not open a page. `MCP_MODE=http npx lite
 **Start command**
 
 ```bash
-MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.4
+MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.5
 ```
 
 | Key | Value |

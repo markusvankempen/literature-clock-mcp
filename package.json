@@ -1,10 +1,10 @@
 {
   "name": "literature-clock-mcp-home",
   "private": true,
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "Project home for literature-clock-mcp. Render starts the published npm package.",
   "scripts": {
-    "start": "MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.4"
+    "start": "MCP_MODE=http HOST=0.0.0.0 npx -y literature-clock-mcp@1.6.5"
   },
   "engines": {
     "node": ">=20"
