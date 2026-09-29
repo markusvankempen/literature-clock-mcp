@@ -390,7 +390,7 @@ npm keywords: `mcp`, `model-context-protocol`, `mcp-server`, `literature-clock`,
 | Clock | What it is |
 |---|---|
 | [Alexa Ink Clock](https://github.com/markusvankempen/alexa-ink-clock) | Alexa skill **Ink O'Clock**. A line for the minute, read aloud. |
-| [Chrome Ink Clock](https://github.com/markusvankempen/chrome-ext-ink-clock) | New-tab and toolbar clock. Copyright-free lines and original voices, bundled in the extension. |
+| [Chrome Ink Clock](https://github.com/markusvankempen/chrome-ext-ink-clock) | New-tab and toolbar clock. Literature reads the public literature-clock. Books and original voices stay on the machine. |
 | [Stanza Clock](https://github.com/markusvankempen/chrome-stanzaclock) | Chrome new-tab word clock. 8×8 and 16×16 letter plates in seven languages. |
 | [ESP-WordClock8x8](https://github.com/markusvankempen/ESP-WordClock8x8) | English 8×8 WS2812 word clock for ESP32-S3 and ESP8266. The hardware face Stanza Clock matches. |
 
